@@ -2,7 +2,7 @@
 // comma -  Function to enable or disable automatic commas in numeric output.
 //
 // Author: Dennis Lang - 2015
-// http://home.comcast.net/~lang.dennis/
+// http://landenlabs/
 //
 // This file is part of LLFile project.
 //

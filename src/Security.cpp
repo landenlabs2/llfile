@@ -2,7 +2,7 @@
 // Security - Security routines
 //
 // Author: Dennis Lang - 2015
-// http://home.comcast.net/~lang.dennis/
+// http://landenlabs.com/
 //
 // This file is part of LLFile project.
 //

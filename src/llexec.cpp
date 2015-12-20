@@ -2,7 +2,7 @@
 // llexec - Execute command on files provided by DirectoryScan object
 //
 // Author: Dennis Lang - 2015
-// http://home.comcast.net/~lang.dennis/
+// http://landenlabs/
 //
 // This file is part of LLFile project.
 //

@@ -1,7 +1,7 @@
 //-----------------------------------------------------------------------------
 // llfile - File/Directory scan engine
 // Author:  DLang   2008
-// http://home.comcast.net/~lang.dennis/
+// http://landenlabs/
 //
 // This program started as a simple directory wildcard experiment.
 // It has grown to slowly replace several of the DOS commands, such as:
@@ -65,7 +65,7 @@
 //      lldel -?        ; assuming lldel is a copy of llfile, show delete commands help
 //
 // Author: Dennis Lang - 2015
-// http://home.comcast.net/~lang.dennis/
+// http://landenlabs/
 //
 // This file is part of LLFile project.
 //
@@ -125,7 +125,7 @@ static const char sHelp[] =
 "    LLFile is a collection of directory and file processing commands using a flexible pattern matching engine.\n"
 "\n"
 "  !0eWeb Site:!0f\n"
-"    http://home.comcast.net/~lang.dennis/  \n"
+"    http://landenlabs/  \n"
 "\n"
 "  !0eCommands:!0f\n"
 "    Normally use use the -xi option to install the mapping to individual command short-cuts\n"
