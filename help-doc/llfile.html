@@ -1,0 +1,1251 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+
+<head>
+  <meta name="author" content="Dennis Lang">
+  <title>LLFile - Directory, Copy, Move, Delete, Compare console command replacement - Dennis Lang</title>
+
+  <!-- Google analytics tracking -->
+  <script type="text/javascript" src="/~lang.dennis/scripts.js"></script>
+
+  <style type="text/css">
+  body { color:black; background-color:#d0d0d0;}
+  h1 { 
+    color: #d08000; 
+    background-color: 808080; 
+    text-shadow: 0px 0px 2px #ffffff;
+  }
+  PRE { background-color:#ffff80; color:black; margin:30px; border:1px solid blue; font-size: 120%; }
+  .t { color:blue; font-size: 150%; }
+  .n { color:black; font-size: 80%; }
+  .s { color:red; font-weight: bold;}
+  blockquote { margin:10px; border-style:groove; padding:10px;}
+
+  </style>
+</head>
+
+<body>
+<a name="top" />
+<p>
+<a href="../../index.html"> [Back to Main Page] </a>
+<p>
+
+<p>
+<h1> Version </h1>
+  <blockquote>
+  <b>Dennis Lang</b>
+  <br>Version: 15.3s
+  <br>Updated:  Jun-2015
+  <br> http://home.comcast.net/~lang.dennis/
+
+</blockquote>
+
+<h1> Download </h1>
+<blockquote>
+    <ul>
+    <li>Download v15.3s source code:<a href="llfile-v153-src.zip" onClick="return trackLink(this);" download>  LLFile-v153-src.zip  </a>
+    <li>Download v15.3s executable x64 (vs2010):<a href="llfile-x64.exe" onClick="return trackLink(this);" download>  LLFile-x64.exe  </a>
+    <li>Download v15.3s executable x32 (vs2010):<a href="llfile-x32.exe" onClick="return trackLink(this);" download>  LLFile-x32.exe  </a>
+
+    <li>Download v8.3 source code:<a href="llfile-v8.3-src.zip" onClick="return trackLink(this);" download>  LLFile-v8.3-src.zip  </a>
+    </ul>
+</blockquote>
+
+
+<h1> Intro </h1>
+
+ The <span class='s'>llfile</span> program started as a simple directory wildcard experiment.
+ It has grown to slowly replace several of the DOS/Unix commands, such as:
+
+ <blockquote>
+   <table  >
+   <tr style="background:#808080;"><td>Command	<td>Description
+   <tr><td>dir		  <td><a href="#lldir">Directory listing </a>
+   <tr><td>copy		  <td><a href="#llcopy">File copy </a>
+   <tr><td>move		  <td><a href="#llmove">File move </a>
+   <tr><td>del		  <td><a href="#lldel">File deleletion </a>
+   <tr><td>find/where <td><a href="#llfind">Find where files are </a>
+   <tr><td>printf	  <td><a href="#printf">Format file and dates </a>
+   <tr><td>exec		  <td><a href="#llexec">Execute external command on files </a>
+   <tr><td>compare    <td><a href="#llcmp">Binary file compare  </a>
+   <tr><Td>grep / replace <td><a href="#llgrep">Grep Find and Replace </a>
+   <tr><td>testing    <td><a href="#test">Batch file to test most commands  </a>
+   </table>
+ </blockquote>
+  All of the following features are provided by a single program <span class='s'>llfile.exe</span>.
+  This program has several personalities or commands.  There are two ways to
+  select a command.
+ <p>
+ <ol>
+    <li> Command switch -x[c|d|e|f|m|o|p|r|w]
+	  <blockquote>
+                  c = copy
+      <br>        d = dir
+      <br>        e = execute
+	  <br>        f = find
+      <br>        g = grep
+	  <br>        m = move
+	  <br>        o = compare
+	  <br>        p = print
+      <br>        r = del (remove)
+	  <br>        w = where
+	  <p>
+         Example:
+      <br>   llfile -xr  *.foo   ; remove files matching pattern *.foo
+      <br>   llfile -xd  *.foo   ; list directory of files matching *.foo
+	  </blockquote>
+
+    <li> Copy or link the executable to command name.  You can use Windows <b>fsutil</b> to setup a link.
+         The provided helper batch file <span class='s'>llcopy-install.bat</span> shows how to setup all of the aliases via links.
+         <blockquote>
+              copy llfile.exe lldir.exe
+         <br> copy llfile.exe llcopy.exe
+         <br> copy llfile.exe llexec.exe
+         <br> copy llfile.exe lldel.exe
+         <br> or
+         <br> fsutil hardlink create lldir.exe llfile.exe
+         <br> fsutil hardlink create llcopy.exe llfile.exe
+         <br> fsutil hardlink create llexec.exe llfile.exe
+         <br> fsutil hardlink create lldel.exe llfile.exe
+		 </blockquote>
+
+         When you use the specialize executables, their name automatically
+         sets the personality.
+		 <blockquote>
+              lldir *.foo         ; runs directory command
+         <br> lldel *.foo         ; runs delete command
+		 </blockquote>
+         The valid specialized executable names are listed below with each commands documentation.
+         For example, <b>lldir</b> can also be <b>ld</b> or <b>d</b>.
+
+  </ol>
+
+  The wildcard engine only support ? and *, but allows the wildcard
+  characters to appear multiple times, in the both the filename and directories.
+  <p>
+  The program continues to be an experiment, so <span class='s'>no guaranties on
+  reliability and completeness.</span> The copy and move commands are the hardest to use because of how their destination path is defined.
+ <p>
+
+<a name="lldir"></a>
+<h1> List Directory / lldir / ld  / d </h1>
+The lldir command is similar to the DOS <span class='s'>dir</span> and Unix <span class='s'>ls</span> command in that it list files and directories with a plethora of options.  The main feature lldir adds is a more flexible pattern matcher. It is still limited to the basic '*' and '?' patterns but they can appear multiple times and in the directory path.
+
+<p>
+Help Banner:
+<pre>
+ List Directory v14.0s
+
+  Syntax:
+    &lt;filePattern&gt;
+    [&lt;directory|pattern&gt; \ ]... &lt;filePattern&gt;
+
+  Pattern:
+      * = zero or more characters
+      ? = any character
+
+  Example:
+      *                ; List all filse in current directory
+      *.obj            ; List only files ending in .obj in current directory
+    -R c:\tmp\*.obj    ; List all .obj files in and under c:\tmp directory
+   c:\t*\src\*         ; List all files off directory starting with t
+                       ;  and having subdirectory src
+
+   -a                  ; Show attributes  (-aw  show as words, -as show security)
+   -cw or -cr          ; Change permission to writeable or readonly
+   -ct                 ; Change time (modify)
+   -h or -H            ; Hide heading
+   -l                  ; Long format  &lt;attributes&gt; &lt;size&gt; &lt;modify time&gt; &lt;file name&gt;
+   -r or -R            ; Recurse directories
+   -s                  ; Hide file size size
+   -u                  ; Show disk usage summary (size, count), use instead of -r
+   -U                  ; Show disk usage summary (size, count) by extension
+   -UU or -UUU         ; Show disk usage by Name (-UU) or Directory (-UUU)
+   -w                  ; Show in wide format
+   -A=[nrhs]           ; Limit files by attribute (n=normal r=readonly, h=hidden, s=system)
+   -D                  ; Show only directories
+   -F                  ; Show only files
+   -I                  ; Show fileId (use with -L)
+   -L                  ; Show hard link count and any Alternate Data Streams
+   -N or -n            ; Show just names, same as -h -s -tn -q
+   -p                  ; Show full file path
+   -P=&lt;srcPathPat&gt;     ; Optional regular expression pattern on source files full path
+   -q                  ; Quiet, dont show stats, no color
+   -1=&lt;file&gt;           ; Redirect output to file
+   -Q=n                ; Quit after 'n' lines output
+   -S[-][acmnenpst]    ; Sort on a=access,c=creation,m=modify time, e=ext, n=name, p=path, s=size or t=type. -=reverse
+   -t[acm]             ; Show Time a=access, c=creation, m=modified, n=none
+   -T[acm]&lt;op&gt;&lt;value&gt;  ; Test Time a=access, c=creation, m=modified
+                       ; op=(Greater|Less|Equal)  Value= now|+/-hours|yyyy:mm:dd:hh:mm:ss
+                       ; Value time parts significant from right to left, so mm:ss or hh:mm:ss, etc
+                       ;  Example   -TmcEnow    Show if modify or create time Equal to now
+                       ;  Example   -TmG-4.5   Show if modify time Greater than 4.5 hours ago
+                       ;  Example   -TaL04:00:00   Show if access time Less than 4am today
+   -W[admr]            ; Watch directories for any change, options limit wach to
+                       ;  a=Add, d=Delete, m=Modified, r=renamed, default is any change
+   -X=&lt;pathPat&gt;,...    ; Exclude patterns  -X=*.lib,*.obj,*.exe
+                       ;  No space in patterns. Pattern applied against fullpath
+                       ;  So *\ma will exclude a directory ma or file ma
+   -Z&lt;op&gt;&lt;value&gt;       ; siZe op=(Greater|Less|Equal) value=num&lt;units G|M|K&gt;, ex -Zg100M
+   -C=&lt;colorOpt&gt;       ; Set colors, colors are red,green,blue,intensity, add bg to end of color for background
+    -C=r&lt;colors&gt;       ;   readonly  ex -C=r+red+blue or -C=r+bluebg
+    -C=d&lt;colors&gt;       ;   directory
+    -C=h&lt;colors&gt;       ;   hidden file or directory
+   -,                  ; Disable commas in size and numeric output
+   -=&lt;sep&gt;             ; Set output field separator string
+   -#                  ; Change date format
+   -?                  ; Show this help
+   -??                 ; Show extended help
+
+ Attributes
+ Long form             Single Char
+ Left-To-Right         Last match wins
+----------------       ----------------
+ READONLY      R        NORMAL
+ HIDDEN        H        NOT_INDEXED   I
+ SYSTEM        S        ARCHIVE
+ DIRECTORY     D        READONLY      r
+ ARCHIVE       A        HIDDEN        h
+ DEVICE        d        SYSTEM        s
+ NORMAL        N        DIRECTORY     \
+ TEMPORARY     T        DEVICE        d
+ SPARSE_FILE   S        TEMPORARY     t
+ REPARSE_POINT r        SPARSE_FILE   S
+ COMPRESSED    C        REPARSE_POINT &gt;
+ OFFLINE       O        COMPRESSED    %
+ NOT_INDEXED   I        OFFLINE       O
+ ENCRYPTED     E        ENCRYPTED     E
+ VIRTUAL       V        VIRTUAL       V
+
+ Set defaults by assigning them to the LLDIR environment variable
+ Use pipe to divide options instead of minus and end with pipe.
+ Ex:  (you must quote string since pipe is a shell character)
+     ; Set hidden file color to pink
+     set "lldir=Ch+red+blue|"
+     ; Don't show size
+     set "lldir=s|"
+
+</pre>
+
+
+<p>
+For example, if you want to locate all of the <font color=red>cpp</font> files in all directories which start with the letter <font color=red>d</font>:
+<pre>
+C:\dlang\soft\dlang_website\console>ld \dlang\soft\<font color=red>d</font>*\*.<font color=red>cpp</font>
+
+Directory:\dlang\soft\dclean
+ Modification                    Size A File
+ 07/19/2009 8:30 AM             2,163   about.cpp
+ 07/19/2009 8:30 AM             4,309   CustomHintWin.cpp
+ 07/19/2009 8:30 AM             1,192   DClean.cpp
+ 07/19/2009 8:30 AM             7,438   DiskScan.cpp
+ 07/19/2009 8:30 AM            30,697   Main.cpp
+ 07/19/2009 8:30 AM             5,234   options.cpp
+ 07/19/2009 8:38 AM             5,280   RegEnum.cpp
+ 07/19/2009 8:30 AM             3,002   result.cpp
+ 07/19/2009 8:30 AM             1,240   SaveRestore.cpp
+ 07/19/2009 8:30 AM             3,027   structs.cpp
+ 07/19/2009 8:30 AM            13,641   TextPlugInfo.cpp
+ 07/19/2009 8:30 AM               525   wait.cpp
+
+Directory:\dlang\soft\dclean_157
+ Modification                    Size A File
+ 01/24/2009 1:26 PM             2,163   about.cpp
+ 01/24/2009 1:26 PM             4,309   CustomHintWin.cpp
+ 01/24/2009 1:26 PM             1,192   DClean.cpp
+ 01/24/2009 1:26 PM             7,438   DiskScan.cpp
+ 01/24/2009 1:26 PM            30,697   Main.cpp
+ 01/24/2009 1:26 PM             5,234   options.cpp
+ 01/24/2009 1:26 PM             5,254   RegEnum.cpp
+ 01/24/2009 1:26 PM             3,002   result.cpp
+ 01/24/2009 1:26 PM             1,240   SaveRestore.cpp
+ 01/24/2009 1:26 PM             3,027   structs.cpp
+ 01/24/2009 1:26 PM            13,641   TextPlugInfo.cpp
+ 01/24/2009 1:26 PM               525   wait.cpp
+
+Directory:\dlang\soft\ddj_thread_queue
+ Modification                    Size A File
+ 02/22/2009 3:09 PM            25,620   ring_spin_test.cpp
+ 06/15/2007 8:40 PM               301   stdafx.cpp
+
+;Directories:0, Files:26, TotalSize:181,391
+</pre>
+Sorting multiple directories sorts the entire set as one. Sorting is selected with <font color=red>-S=</font> followed by a sort criteria. Notice I disabled the 'headings' with <font color=red>-h</font>.
+<b>Sorting Criteria:</b>
+<blockquote>
+    <ul>
+    <li> a = last access time
+    <li> c = creation time
+    <li> m = modify time
+    <li> e = extension (text following last period)
+    <li> n = name (includes extension)
+    <li> p = path (directories and name)
+    <li> s = size
+    <li> t = type (directory, file, device)
+    <li> - = reverse sort
+    </ul>
+</blockquote>
+<pre>
+C:\dlang\soft\dlang_website\console>ld -hS=s \dlang\soft\d*\*.cpp
+
+ 06/15/2007 8:40 PM               301   stdafx.cpp
+ 01/24/2009 1:26 PM               525   wait.cpp
+ 07/19/2009 8:30 AM               525   wait.cpp
+ 07/19/2009 8:30 AM             1,192   DClean.cpp
+ 01/24/2009 1:26 PM             1,192   DClean.cpp
+ 07/19/2009 8:30 AM             1,240   SaveRestore.cpp
+ 01/24/2009 1:26 PM             1,240   SaveRestore.cpp
+ 07/19/2009 8:30 AM             2,163   about.cpp
+ 01/24/2009 1:26 PM             2,163   about.cpp
+ 07/19/2009 8:30 AM             3,002   result.cpp
+ 01/24/2009 1:26 PM             3,002   result.cpp
+ 07/19/2009 8:30 AM             3,027   structs.cpp
+ 01/24/2009 1:26 PM             3,027   structs.cpp
+ 07/19/2009 8:30 AM             4,309   CustomHintWin.cpp
+ 01/24/2009 1:26 PM             4,309   CustomHintWin.cpp
+ 07/19/2009 8:30 AM             5,234   options.cpp
+ 01/24/2009 1:26 PM             5,234   options.cpp
+ 01/24/2009 1:26 PM             5,254   RegEnum.cpp
+ 07/19/2009 8:38 AM             5,280   RegEnum.cpp
+ 07/19/2009 8:30 AM             7,438   DiskScan.cpp
+ 01/24/2009 1:26 PM             7,438   DiskScan.cpp
+ 07/19/2009 8:30 AM            13,641   TextPlugInfo.cpp
+ 01/24/2009 1:26 PM            13,641   TextPlugInfo.cpp
+ 02/22/2009 3:09 PM            25,620   ring_spin_test.cpp
+ 07/19/2009 8:30 AM            30,697   Main.cpp
+ 01/24/2009 1:26 PM            30,697   Main.cpp
+
+;Directories:0, Files:26, TotalSize:181,391
+</pre>
+To make the above more useful, you can request full filename path with the <font color=red>-p</font> option.
+<pre>
+C:\dlang\soft\dlang_website\console>ld -hpS=s \dlang\soft\d*\*.cpp
+
+ 06/15/2007 8:40 PM               301   \dlang\soft\ddj_thread_queue\stdafx.cpp
+ 01/24/2009 1:26 PM               525   \dlang\soft\dclean_157\wait.cpp
+ 07/19/2009 8:30 AM               525   \dlang\soft\dclean\wait.cpp
+ 07/19/2009 8:30 AM             1,192   \dlang\soft\dclean\DClean.cpp
+ 01/24/2009 1:26 PM             1,192   \dlang\soft\dclean_157\DClean.cpp
+ 07/19/2009 8:30 AM             1,240   \dlang\soft\dclean\SaveRestore.cpp
+ 01/24/2009 1:26 PM             1,240   \dlang\soft\dclean_157\SaveRestore.cpp
+ 07/19/2009 8:30 AM             2,163   \dlang\soft\dclean\about.cpp
+ 01/24/2009 1:26 PM             2,163   \dlang\soft\dclean_157\about.cpp
+ 07/19/2009 8:30 AM             3,002   \dlang\soft\dclean\result.cpp
+ 01/24/2009 1:26 PM             3,002   \dlang\soft\dclean_157\result.cpp
+ 07/19/2009 8:30 AM             3,027   \dlang\soft\dclean\structs.cpp
+ 01/24/2009 1:26 PM             3,027   \dlang\soft\dclean_157\structs.cpp
+ 07/19/2009 8:30 AM             4,309   \dlang\soft\dclean\CustomHintWin.cpp
+ 01/24/2009 1:26 PM             4,309   \dlang\soft\dclean_157\CustomHintWin.cpp
+ 07/19/2009 8:30 AM             5,234   \dlang\soft\dclean\options.cpp
+ 01/24/2009 1:26 PM             5,234   \dlang\soft\dclean_157\options.cpp
+ 01/24/2009 1:26 PM             5,254   \dlang\soft\dclean_157\RegEnum.cpp
+ 07/19/2009 8:38 AM             5,280   \dlang\soft\dclean\RegEnum.cpp
+ 07/19/2009 8:30 AM             7,438   \dlang\soft\dclean\DiskScan.cpp
+ 01/24/2009 1:26 PM             7,438   \dlang\soft\dclean_157\DiskScan.cpp
+ 07/19/2009 8:30 AM            13,641   \dlang\soft\dclean\TextPlugInfo.cpp
+ 01/24/2009 1:26 PM            13,641   \dlang\soft\dclean_157\TextPlugInfo.cpp
+ 02/22/2009 3:09 PM            25,620   \dlang\soft\ddj_thread_queue\ring_spin_test.cpp
+ 07/19/2009 8:30 AM            30,697   \dlang\soft\dclean\Main.cpp
+ 01/24/2009 1:26 PM            30,697   \dlang\soft\dclean_157\Main.cpp
+
+;Directories:0, Files:26, TotalSize:181,391
+</pre>
+
+<center>
+<div class=t>
+
+<p> Example of Color and Softlink (redirection) <br>
+<div class=n>
+Notice the single character preceeding the filename. The characters signify special attributes.
+<blockquote>
+
+<table border=1 width=600 bgcolor=#808080>
+<colgroup>
+<col width="2*">
+<col width="1*">
+<col width="2*">
+<col width="1*">
+<col width="2*">
+<col width="1*">
+<col width="2*">
+<col width="1*">
+</colgroup>
+<thead>
+<tr><td colspan=8><center>Single Char Last Match wins</center>
+<tr><td> Normal        <td> &nbsp;
+    <td> Not Indexed   <td> I
+    <td>  Archive      <td> &nbsp;
+    <td> <font color=red> Readonly </font>    <td> <font color=red> r </font>
+<tr><td>  <font color=#ff8080> Hidden  </font>     <td> <font color=pink> h </font>
+    <td>  System       <td> s
+    <td>  <font color=yellow>Directory </font>   <td> <font color=yellow> \ </font>
+    <td>  Device       <td> d
+<tr><td>  Temporary    <td> t
+    <td>  Sparse file  <td> S
+    <td>  <font color=yellow>Reparse point </font><td> <font color=yellow> > </font>
+    <td>  <font color=blue>Compressed  </font> <td> <font color=blue> % </font>
+<tr><td>  Offline      <td> O
+    <td>  Encrypted    <td> E
+    <td>  Virtual      <td> V
+	<td> &nbsp;        <td> &nbsp;
+</table>
+</blockquote>
+</div>
+
+<img src="ld-color-softlink.png" alt="ld-color-softlink">
+<p> Example of Creation, Access and Modification Dates <br><img src="ld-dates-path.png" alt="ld-dates-path">
+<p> Example showing hardlink count and id <br><img src="ld-hardlink.png" alt="ld-hardlink">
+<p> Example of Wide Listing <br>
+<blockquote class="n">
+  Most switches toggle their state. Hide the file size by using <span class='s'>-s</span>.
+  Use <span class="s">-h</span> to disable heading and <span class="s">-tn</span> to set the Time to None.
+  Notice that the switches can be concatenated together to form <span class="s">-shtn</span>.
+  As of version 14, most switches which have arguments require an equal sign to prevent incorrect parsing of 
+  long strings of commands. 
+  <br>Example <span class="s">-S=s -F=*.exe,*.bat -X=a*</span>.
+</blockquote>
+<img src="ld-wide.png" alt="ld-wide">
+<p>The following three images show three ways to display file attributes/types.
+<p>
+<div style="border: 1px solid blue; width:600px;">
+    <p> 1. Attributes shown as single character <br><img src="ld-default.png" alt="ld-default">
+    <hr>
+    <p> 2. Attributes shown as full array of characters <br><img src="ld-attributebits.png" alt="ld-attributebits">
+    <hr>
+    <p> 3. Significant Attributes shown as Word <br><img src="ld-words.png" alt="ld-words">
+</div>
+</center>
+
+<a name="llcopy"></a>
+<h1> Copy / llcopy / lc / c</h1>
+
+llcopy is similar to the DOS copy and xcopy commands but adds the ability to customize the destination path.
+<p>
+
+Help Banner:
+<pre>
+ Copy v14.0s
+
+  Syntax:
+    [&lt;switches&gt;] &lt;fromPattern&gt;...  &lt;toPattern&gt;
+
+  Destination controls:
+   -cw or -cr          ; Change destination permission to writeable or readonly
+   -f                  ; Force copy even if destination is set to read only
+   -n                  ; No copy, just echo command
+   -o                  ; Only copy if destination is older than source (modify time)
+   -O                  ; Okay to over write existing destination regardless of time
+   -p                  ; Prompt before copy
+   -pp                 ; Prevent prompt on Override or readonly, just skip file
+   -P=&lt;srcPathPat&gt;     ; Optional regular expression pattern on source files
+   -z                  ; Un/Compress (compressed file ends in .lzo)
+  Source selection:
+   -A=[nrhs]           ; Limit files by attribute (n=normal r=readonly, h=hidden, s=system)
+   -D                  ; Copy directory tree if destination does not exist
+   -r                  ; Recurse starting at from directory, matching file pattern
+   -I=&lt;file&gt;           ; Read list of files from &lt;file&gt; or - for stdin
+   -F=&lt;filePat&gt;,...    ; Limit to matching file patterns
+   -X=&lt;pathPat&gt;,...    ; Exclude patterns  -X=*.lib,*.obj,*.exe
+                       ;  No space in patterns. Pattern applied against fullpath
+                       ;  So *\ma will exclude a directory ma or file ma
+   -Z&lt;op&gt;&lt;value&gt;       ; siZe op=(Greater|Less|Equal) value=num&lt;units G|M|K&gt;, ex -Zg100M
+  Misc options:
+   -B=c                ; Add additional field separators to use with #n selection
+   -q                  ; Quiet, don't echo command (echo on by default)
+   -1=&lt;output&gt;         ; Redirect output to file
+
+  Where fromPattern is:
+    &lt;file|Pattern&gt;
+    [&lt;directory|pattern&gt; \]... &lt;file|Pattern|#n&gt;
+
+  Pattern:
+      * = zero or more characters
+      ? = any character
+
+  Destination Pattern:
+     *n = Replace destination with source filename wildcard 'n', 1 is first
+          Ex:  lc *\file-*-.*   file.*1
+
+     #n = replace destination with source directory 'n'
+          where n is subdirectories n=1 first from left
+          -n counts from right
+
+     #l = where 'l' is a letter:
+         b = base name
+         e = extension
+         n = base.ext
+         l, u, c = lower, upper, captialize name for later use
+
+  Example:
+      lc *      e:\tmp\
+      lc *.obj  e:\tmp\
+      lc -R c:\tmp\*.obj d:\tmp\*.obj  e:\tmp\
+      lc c:\t*\src\*  e:\tmp\
+
+     ; Use # to select subdirectories or parts of source path name. Also to convert case.
+     ; When any # appear in line, use #n, #b, #e to specify target filename
+      lc c:\foo\bar\*\*.DAT  d:\far\#-1\#l#n
+      lc c:\foo\bar\*.dat   d:\far\#b.tmp   ; change extension .dat to .tmp
+
+     ; Remove underscores from files
+      lc -B_ c:\*_*_*.dat   d:\*1*2*3.dat
+
+     ; Copy full recursive directory
+      lc -r srcDir  backup\*   ; Note * is important in destination to force dir creation
+     ; Copy just dat files
+      lc -r srcDir\*.dat  backup\*
+     ; Copy and compress files
+      lc -rz \*.dat  compressed\*
+     ; Uncompress files
+      lc -rz compressed\*.lzo  srcDir\*
+
+</pre>
+
+<a name="llmove"></a>
+<h1>  Move / llmove / lm </h1>
+<p>
+Help Banner:
+<pre>
+ Move v14.0s
+
+  Syntax:
+    [&lt;switches&gt;] &lt;fromPattern&gt;...  &lt;toPattern&gt;
+
+  Where switches are:
+   -A=[nrhs]           ; Limit files by attribute (n=normal r=readonly, h=hidden, s=system)
+   -cw or -cr          ; Change destination permission to writeable or readonly
+   -f                  ; Force move even if destination is set to read only
+   -I=&lt;file&gt;           ; Read list of files from &lt;file&gt; or - for stdin
+   -n                  ; No move, just echo command
+   -o                  ; Only move if destination is older than source (modify time)
+   -O                  ; Okay to over write existing destination regardless of time
+   -r                  ; Recurse starting at from directory, matching file pattern
+   -p                  ; Prompt before move
+   -pp                 ; Prevent prompt on Override or readonly, just skip file
+   -P=&lt;srcPathPat&gt;     ; Optional regular expression pattern on source files full path
+   -q                  ; Quiet, don't echo command (echo on by default)
+   -B=c                ; Add additional field separators to use with #n selectoin
+   -D                  ; Only move directories
+   -F                  ; Only move files
+   -F=&lt;filePat&gt;,...    ; Limit to matching file patterns
+   -L                  ; Create hard link instead of copy
+   -X=&lt;pathPat&gt;,...    ; Exclude patterns  -X=*.lib,*.obj,*.exe
+                       ;  No space in patterns. Pattern applied against fullpath
+                       ;  So *\ma will exclude a directory ma or file ma
+   -Z&lt;op&gt;&lt;value&gt;       ; siZe op=(Greater|Less|Equal) value=num&lt;units G|M|K&gt;, ex -Zg100M
+   -?                  ; Show this help
+
+  Where fromPattern is:
+    &lt;file|Pattern&gt;
+    [&lt;directory|pattern&gt; \]... &lt;file|Pattern|#n&gt;
+
+  Pattern:
+      * = zero or more characters
+      ? = any character
+
+  Destination Pattern:
+     *n = Replace destination with source filename wildcard 'n', 1 is first
+          Ex:  lm *\file-*-.*   file.*1
+
+     #n = Replace destination with source directory 'n'
+          where n is subdirectories n=1 first from left
+          or -n counts from right
+
+     #&lt;arg&gt; = where &lt;arg&gt; is a letter
+         f = fullpath
+         d = directory
+         b = base name
+         e = extension
+         n = base.ext
+         l, u, c = lower, upper, captialize name for later use
+
+  Example:
+      *      e:\tmp\
+      *.obj  e:\tmp\
+      -R c:\tmp\*.obj d:\tmp\*.obj  e:\tmp\
+      c:\t*\src\*  e:\tmp\
+
+     ; use # to select subdirectories and force name (#n) to lowercase (#l)
+     ; when any # appear in line, use #n, #b, #e to specify target filename
+      c:\foo\bar\*\*.DAT  d:\far\#-1\#l#n
+      c:\foo\bar\*.dat   d:\far\#b.tmp   ; change extension .dat to .tmp
+
+     ; remove underscores from files
+      c:\*_*_*.dat   d:\*1*2*3.dat
+     ; Read files from stdin
+     ld -N | grep Foo | lm -i=- .\backup\#n
+
+</pre>
+
+<a name="lldel"></a>
+<h1> Delete / lldel / lr / r</h1>
+<p>
+Help Banner:
+<pre>
+ Delete v14.0s
+
+  Syntax:
+    [&lt;switches&gt;] &lt;Pattern&gt;...
+
+  Where switches are:
+   -A=[nrhs]           ; Limit files by attribute (n=normal r=readonly, h=hidden, s=system)
+   -D                  ; Del directories only
+   -F                  ; Del files only
+   -F=&lt;filePat&gt;,...    ; Limit to matching file patterns
+   -f                  ; Force delete even if destination is set to read only
+   -I=&lt;infile&gt;         ; Read filenames from infile or stdin if -
+   -j                  ; Follow junctions (default: skip junctions)
+   -n                  ; No delete, just echo command
+   -p                  ; Prompt before delete
+   -q                  ; Quiet, don't echo command (echo on by default)
+   -r                  ; Recurse starting at from directory, matching file pattern
+   -s                  ; show file size size
+   -t[acm]             ; show Time a=access, c=creation, m=modified, n=none
+   -u                  ; Enable undo, delete files and directories by moving to recycle bin
+   -P=&lt;srcPathPat&gt;     ; Optional regular expression pattern on source files full path
+   -Q=n                ; Quit after 'n' retries if error
+   -T[acm]&lt;op&gt;&lt;value&gt;  ; Test Time a=access, c=creation, m=modified
+                       ; op=(Greater|Less|Equal)  Value= now|+/-hours|yyyy:mm:dd:hh:mm:ss
+                       ; Value time parts significant from right to left, so mm:ss or hh:mm:ss, etc
+                       ; Example   -TmcEnow    Show if modify or create time Equal to now
+                       ; Example   -TmG-4.5   Show if modify time Greater than 4.5 hours ago
+                       ; Example   -TaL04:00:00   Show if access time Less than 4am today
+   -X=&lt;pathPat&gt;,...    ; Exclude patterns  -X=*.lib,*.obj,*.exe
+                       ;  No space in patterns. Pattern applied against fullpath
+                       ;  So *\ma will exclude a directory ma or file ma
+   -Z&lt;op&gt;&lt;value&gt;       ; siZe op=(Greater|Less|Equal) value=num&lt;units G|M|K&gt;, ex -Zg100M
+   -1=&lt;output&gt;         ; Redirect output to file
+   -?                  ; Show this help
+
+  Where fromPattern is:
+    &lt;file|Pattern&gt;
+    [&lt;directory|pattern&gt; \]... &lt;file|Pattern|#n&gt;
+
+  Note - remember to end directory with \ as in
+       -rfq .\foo-*\   ; Recursively, forcefully quietly remove all files
+                       ; and directories which start in a directory that
+                       ; starts with foo-
+       -rfq .\foo-*    ; Similar but search ALL directories at current level
+                       ; for files or directories which start with foo-
+
+  Pattern:
+      * = zero or more characters
+      ? = any character
+</pre>
+
+<a name="llfind"></a>
+<h1> Find or Where / llfind / where / lf </h1>
+<p>
+Help Banner:
+<pre>
+Find v14.0s
+Find a file along directory path or env paths
+
+ Syntax:
+   [&lt;switches&gt;] &lt;Pattern&gt;...
+
+ Where switches are:
+  -?                  ; Show this help
+  -A=[nrhs]           ; Limit files by attribute (n=normal r=readonly, h=hidden, s=system)
+  -D                  ; Only directories in matching, default is all types
+  -p                  ; Search PATH environment directories for pattern
+  -e=&lt;envName&gt;[,...]  ; Search env environment directories for pattern
+  -F                  ; Only files in matching, default is all types
+  -F=&lt;filePat&gt;,...    ; Limit to matching file patterns
+  -I=&lt;file&gt;           ; Read list of files from this file
+  -p                  ; Short cut for -e=PATH, search path
+  -P=&lt;srcPathPat&gt;     ; Optional regular expression pattern on source files full path
+  -q                  ; Quiet, default is echo command
+  -Q=n                ; Quit after 'n' matches
+  -s                  ; Show file size size
+  -t[acm]             ; Show Time a=access, c=creation, m=modified, n=none
+  -X=&lt;pathPat&gt;,...    ; Exclude patterns  -X=*.lib,*.obj,*.exe
+                      ;  No space in patterns. Pattern applied against fullpath
+                      ;  So *\ma will exclude a directory ma or file ma
+  -V                  ; Verbose
+  -E=[cFDdsa]         ; Return exit code, c=file+dir count, F=file count, D=dir Count
+                      ;    d=depth, s=size, a=age
+  -r                  ; Don't recurse into subdirectories
+  -1=&lt;file&gt;           ; Redirect output to file
+
+ Where Pattern is:
+   &lt;file|Pattern&gt;
+   [&lt;directory|pattern&gt; \]... &lt;file|Pattern|#n&gt;
+
+ Pattern:
+     * = zero or more characters
+     ? = any character
+
+ Example:
+   ; Assuming lf.exe and where.exe are linked to llfile.exe
+   ; Example to find where an executable is in current search PATH
+   llfile -xw  cmd.exe              ; -xw force where command
+   lf -p cmd.exe                    ; -p enables PATH search
+   where cmd.exe                    ; where command auto adds '-e'
+   lf -Ar -i=c:\fileList.txt &gt;nul   ; check for non-readonly files from list
+
+   lf -e=LIB libfoo.lib             ; search env LIB's path for libfoo.lib
+   lf -F=*.exe,*.com,*.bat .\*      ; search for executables or batch files
+   lf -F -X=*.obj,*.exe  build\*    ; search for none object or exe files
+</pre>
+
+
+<a name="printf"></a>
+<h1> Print format / printf / p </h1>
+<p>
+Help Banner:
+<pre>
+ Printf v14.0s
+ Print format
+
+  Syntax:
+    [&lt;switches&gt;]
+
+  Where switches are:
+   -I=&lt;inFile&gt;         ; Read input from file or stdin if -
+                       ;  NOTE: -I must be after the -a options
+                       ; Example to convert to uppercase
+                       ;  echo foo | p -a=pn -I=- -p=%s,%s
+   -i=&lt;text&gt;           ; Parse text per separator and send to formatter
+                       ;  NOTE: -a must be before -i to control case
+                       ;  ex:  -a=nuncn  -i=Hello -p=%s,%s,%s
+   -Bc                 ; Field separator (see -e example below)
+   -C=&lt;colorOpt&gt;       ; Set colors, colors are red,green,blue,intensity, add bg to end of color for background
+                       ;  ex -C=red+blue or -C=green,redbg+bluebg
+   -D                  ; Only directories
+   -F[=&lt;filePat&gt;]      ; Only files
+   -a=[pdn...]         ; File arguments passed to printf
+                       ;   p=full path
+                       ;   d=directory
+                       ;   n=name
+                       ;   r=name root (no extension)
+                       ;   e=extension (right of last .)
+                       ;   s=size (as a string)
+                       ;   _=defcase
+                       ;   l=lowercase
+                       ;   u=uppercase
+                       ;   c=captialize
+                       ;  NOTE:  -a must proceed -i or -I
+   -p=&lt;fmt&gt;            ; Printf format, use any valid %s format, %20s
+                       ;  input is either from redirection -i-
+                       ;  or input is from a file  -i&lt;filename&gt;
+                       ;  or input is from file directory scan (trailing arguments)
+                       ; Use quotes to include spaces in format
+                       ;  or a string string as in "-pHello World\n"
+   -P=&lt;srcPathPat&gt;     ; Regular expression pattern on source files path or env items
+   -s=&lt;fmt&gt;            ; Scan input with regex
+   -l=&lt;timeFmt&gt;        ; strftime format using local time
+   -z=&lt;timeFmt&gt;        ; strftime format using zTime
+   -q                  ; Quiet, default is echo command
+   -Q=n                ; Quit after 'n' matches
+   -X=&lt;pattern&gt;        ; Exclude patterns  -X *.lib,*.obj,*.exe
+   -1                  ; Don't recurse into subdirectories
+
+  Note:
+    Remember to escape % if used in a batch file with two %%
+  Examples:
+    ; Use -a to place two copies of filename as argument to printf
+      p -a=nn "-p=p4 move support\\%s radar\\%s\n"  radar\*
+    ; Generate string to copy file to .bak extension, save in batch file
+      p -a=nr "-p=copy %s %s.bak"  *.tax &gt; job.bat
+
+    ; set -p to define printf before -i which specifies the input followed by scan using regex
+      dir | p "-p=%.0syear=%s mon=%s day=%s\n" -I=- "-s=([0-9]*)/([0-9]*)/([0-9]*).*"
+    ; set -p after -I to print contents of input
+      dir | p -I=-  -p=Files=%s\n\n
+      p -I=foo.txt "-p=Stuff %s %s Stuff\n"
+
+    ; List environment variable path, split on semicolon
+      -e=PATH   "-p=%s\n"
+      -e=PATH   "-p=%4# %s\n"        ; Number env path directories
+      -P=Program -e=* -p%s\n           ; Show env's which contain word Program
+      -e=PATH   "-p=%s" *.txt         ; Scan paths for *.txt
+      "-l=Date is %m/%d/%y %H:%M:%S"                    ; local time
+      "-l=Date is %m/%d/%y" "-p=\n" "-l=%H:%M:%S"   ; local time
+
+  strftime:
+        %a Abbreviated weekday name
+        %A Full weekday name
+        %b Abbreviated month name
+        %B Full month name
+        %c Date and time representation appropriate for locale
+        %d Day of month as decimal number (01 û 31)
+        %H Hour in 24-hour format (00 û 23)
+        %I Hour in 12-hour format (01 û 12)
+        %j Day of year as decimal number (001 û 366)
+        %m Month as decimal number (01 û 12)
+        %M Minute as decimal number (00 û 59)
+        %p Current locale's A.M./P.M. indicator for 12-hour clock
+        %S Second as decimal number (00 û 59)
+        %U Week of year as decimal number, with Sunday as first day of week (00 û 53)
+        %w Weekday as decimal number (0 û 6; Sunday is 0)
+        %W Week of year as decimal number, with Monday as first day of week (00 û 53)
+        %x Date representation for current locale
+        %X Time representation for current locale
+        %y Year without century, as decimal number (00 û 99)
+        %Y Year with century, as decimal number
+        %z, %Z Either the time-zone name or time zone abbreviation
+        %%  Percent sign
+</pre>
+
+
+<a name="llcmp"></a>
+<h1> Binary Compare / llcmp / cmp / C</h1>
+<p>
+Help Banner:
+<pre>
+ Compare Two Files v14.0s
+
+ Do binary comparison of files.  When processing a list of files only those
+ with matching base name are compared against each other.
+
+  Syntax:
+    &lt;filePattern&gt; &lt;filePattern&gt;
+
+  Pattern:
+      * = zero or more characters
+      ? = any character
+
+  Example:
+    LLCmp  d1\*               ; Compare similar files in one directory
+    LLCmp  d1\* d2\* d3\*   ; Compare similar files in three directories
+    LLCmp d1\*.cpp d2\*.cpp    ; Compare similar files ending in .cpp
+    LLCmp -r d1 d2           ; Compare all similar files in two directory trees
+    LLCmp c:\t*\src\*.cpp master.cpp ; Compare files to a single file
+                                      ; and having subdirectory src
+    LLCmp -o20 -v new.data old.data    ;Use offset to skip over date changes
+
+  Output controls:
+   -a                  ; Show ALL match result (default is only differences)
+   -e                  ; Show only equal files
+   -s                  ; Show skipped files  (default is only differences)
+   -s=l or -s=r        ; Show skipped Left or Right files
+   -v                  ; Verbose, show detail on first difference per file
+   -V=&lt;count&gt;          ; Verbose, show differences, stop after 'count' per file
+   -w=&lt;width&gt;          ; Compare filesize numeric width, default 12
+   -P                  ; Hide compress progress
+   -q                  ; quiet, dont show detail, just set exit status 0=match, 1=differ
+   -qq                 ; Hide details and only show summary when used with -F
+   -Q=n                ; Quit after 'n' lines output
+   -1=&lt;output&gt;         ; Redirect output to file
+   -,                  ; Disable commas in size and numeric output
+
+  File selection:
+   -A=[nrhs]           ; Limit files by attribute (n=normal r=readonly, h=hidden, s=system)
+   -D                  ; Force subdirectories and name to match before comparing
+   -F                  ; Match just the filename, size and date and not its contents
+   -I=&lt;infile&gt;         ; Read filenames from infile or stdin if -
+   -r                  ; Recurse directories
+   -l=&lt;levels&gt;         ; Directory levels to include in path matching, default is 1
+   -o=&lt;offset&gt;         ; Start binary file compare at file offset, default is 0
+   -X=&lt;pathPat&gt;,...    ; Exclude patterns  -X=*.lib,*.obj,*.exe
+                       ;  No space in patterns. Pattern applied against fullpath
+                       ;  So *\ma will exclude a directory ma or file ma
+   -Z=&lt;op&gt;&lt;value&gt;      ; siZe op=(Greater|Less|Equal) value=num&lt;units G|M|K&gt;, ex -Zg100M
+
+  Special actions:
+   -d=e | -d=n         ; Delete matching (-d=e) or not matching files (-d=n)
+   -n                  ; Don't execute delete, just show command delete command
+  Exit value (%ERRORLEVEL%):
+   -E=e                ; return #equal
+   -E=d                ; return #diff
+   -E=dlr              ; return diff + left + right
+</pre>
+
+<a name="llexec"></a>
+<h1> Execute / llexec / le / e </h1>
+<p>
+Help Banner:
+<pre>
+ Execute v14.0s
+
+  Syntax:
+    [&lt;switches&gt;] -c "command" &lt;Pattern&gt;...
+
+  Where switches are:
+   -?                  ; Show this help
+   -A=[nrhs]           ; Limit files by attribute (n=normal r=readonly, h=hidden, s=system)
+   -B=c                ; Add additional field separators to use with #n selectoin
+   -D                  ; Only process directories
+   -F                  ; Only process files
+   -F=&lt;filePat&gt;,...    ; Limit to matching file patterns
+   -f                  ; Force to execute on read-only files
+   -g &lt;grepPattern&gt;    ; Execute only if file contains grepPattern
+   -G &lt;grepRange&gt;      ; default is entire file, +n=first n lines, -n=last n lines
+   -I=&lt;file&gt;           ; Read list of files from &lt;file&gt; or - for stdin
+   -n                  ; No execution
+   -p                  ; prompt before executing command
+   -P=&lt;srcPathPat&gt;     ; Optional regular expression pattern on source files full path
+   -q                  ; Quiet, default is echo command
+   -Q                  ; Quote argument before executing
+   -r                  ; Recurse into subdirectories
+   -X=&lt;pathPat&gt;,...    ; Exclude patterns  -X=*.lib,*.obj,*.exe
+                       ;  No space in patterns. Pattern applied against fullpath
+                       ;  So *\ma will exclude a directory ma or file ma
+   -V                  ; verbose mode
+   -Z&lt;op&gt;&lt;value&gt;       ; siZe op=(Greater|Less|Equal) value=num&lt;units G|M|K&gt;, ex -Zg100M
+
+ Last argument:
+   -C=&lt;count&gt;          ; Number of files to append to command, default is 1
+   -c=&lt;command&gt;        ; Execute command, default with file name append to command
+                       ; Use #&lt;arg&gt; to select parts of filename
+   WARNING: Remember to quote command if it has spaces.
+            Also \" at the end of quoted command will not work, added another slash.
+              llexec -c "command arg1 \arg2 \arg3\\"  *.dat
+            Example to copy files and prefix destination name with save-
+              llexec -F "-c=xcopy #q#f#q #qsave-#n#q"
+            Example to prompt to set readonly attributes using attrib command
+              llexec -p "-c=attrib +r "
+            Example to change directory and execute command
+              llecec -D "-c=cmd /c cd #d &amp;&amp; p4 edit *" .\*\
+
+         #&lt;arg&gt; = where &lt;arg&gt; is a letter
+         d = directory
+         f = fullname include directories
+         b = base name
+         e = extension
+         n = base.ext
+         l, u, c = lower, upper, captialize name for later use
+         q adds a quote
+
+  Where Pattern is:
+    &lt;file|Pattern&gt;
+    [&lt;directory|pattern&gt; \]... &lt;file|Pattern|#n&gt;
+
+  Pattern:
+      * = zero or more characters
+      ? = any character
+</pre>
+
+<a name="llgrep"></a>
+<h1> Find and Replace / llgrep / lg  </h1>
+<p>
+Help Banner:
+<pre>
+ Replace v15.3s
+ Replace a file[s] data
+
+  Syntax:
+    [&lt;switches>] &lt;Pattern>...
+
+  Where switches are:
+   -?                  ; Show this help
+   -A=[nrhs]           ; Limit files by attribute (n=normal r=readonly, h=hidden, s=system)
+   -D                  ; Only directories in matching, default is all types
+   -p                  ; Search PATH environment directories for pattern
+   -e=&lt;envName>[,...]  ; Search env environment directories for pattern
+   -F                  ; Only files in matching, default is all types
+   -F=&lt;filePat>,...    ; Limit to matching file patterns
+   -G=&lt;grepPattern>    ; Find only if file contains grepPattern
+   -g=&lt;grepOptions>    ; Use with -G
+                       ; Default is search entire file
+                       ;     Ln=first n lines
+                       ;     Mn=first n matches
+                       ;     H(f|l|m|t) Hide filename|Line#|MatchCnt|Text
+                       ;     I=ignore case
+                       ;     Bn=show before n lines
+                       ;     An=show after n lines
+                       ;     F(l|f) force byLine or byFile
+                       ;     U(i|b) update inline or backup
+   -I=&lt;file>           ; Read list of files from this file
+   -p                  ; Short cut for -e=PATH, search path
+   -P=&lt;srcPathPat>     ; Optional regular expression pattern on source files full path
+   -q                  ; Quiet, default is echo command
+   -Q=n                ; Quit after 'n' file matches
+   -r                  ; Recurse into subdirectories
+   -R=&lt;replacePattern> ; Use with -G to find and replace
+   -s                  ; Show file size size
+   -t[acm]             ; Show Time a=access, c=creation, m=modified, n=none
+   -X=&lt;pathPat>,...    ; Exclude patterns  -X=*.lib,*.obj,*.exe
+                       ;  No space in patterns. Pattern applied against fullpath
+                       ;  So *\ma will exclude a directory ma or file ma
+   -V                  ; Verbose
+   -E=[cFDdsamL]        ; Return exit code, c=file+dir count, F=file count, D=dir Count
+                       ;    d=depth, s=size, a=age, m=#matches, L=list of matching files
+   -1=&lt;file>           ; Redirect output to file
+
+  Where Pattern is:
+    &lt;file|Pattern>
+    [&lt;directory|pattern> \]... &lt;file|Pattern|#n>
+
+  Pattern:
+      * = zero or more characters
+      ? = any character
+
+  Example:
+    llfile -xG -G=(H|h)ello\r\n *.txt       ; -xG force grep command
+    lg "-G=String" -g=I -r -F=*.cpp src      ; Ignore case  String in cpp files
+    lg -Ar -i=c:\fileList.txt >nul          ; check for non-readonly files from list
+                                            
+    lg -F=*.txt,*.log '-G=[0-9]+' .\*       ; search files for numbers
+    lg -X=*.obj,*.exe -G=foo build\*        ; search none object or exe files
+    lg "-G= foo " *.txt | lg -G=bar         ; Same as following
+    lg "-G= foo " -G=bar *.txt              ;  two -G, either can match per line
+
+     ; Use -E=L to match multiple words in same file but not same line
+    lg -G=foo -r -F=*.txt -E=L | lg -I=- -G=bar
+
+    lg "-G='([^']+)',.*" "-R='$1');" foo.txt ; Grep and Replace
+</pre>
+
+<p>
+<img src="lg-grep.png">
+<p>
+<p><br><p>
+<a href="#top"> To Top </a>
+<p>
+<hr>
+<p>
+<a name="test"></a>
+<h1> Test Batch File </h1>
+
+The following is the provided test batch file which runs most of the commands.
+<p>
+<pre>
+@rem
+@rem  Test llfile
+@rem
+
+@echo off
+@if EXIST testDir rmdir /s /q testDir
+
+@mkdir testDir
+
+copy Release\llfile.exe testDir\
+@pushd testDir
+
+@rem Install
+llfile -xi >nul
+
+if not ERRORLEVEL 26 (
+   echo "Install failed, exitcode %ERRORLEVEL%"
+   goto END
+   )
+   
+
+@echo on
+@prompt $g$s
+
+@set heading="\n=========================(%%s)=========================\n\n"
+
+@cls
+@p "-i=Show various colored text" "-p=%heading%"
+p -C=red,whiteBg   "-p= red " -C=green,whiteBg "-p=green " -C=blue,whiteBg  "-p=blue on white\n"
+p -C=red,blackBg   "-p= red " -C=green,blackBg "-p=green " -C=blue,blackBg  "-p=blue on black\n"
+p -C=green+red,redBg "-p= yellow on red\n"
+p -C=black,whiteBg "-p= black on white\n"
+@p -p=\n\n
+@pause
+
+   
+@cls
+@p "-i=Show time/date text" "-p=%heading%"
+p -C=black,whiteBg "-l=DOS Date and Time %%a %%x %%X " "-z=Gmt= %%x %%X"
+(date/t &amp; time/t)  | p -C=black,whiteBg -I=- "-p=DOS Date and Time %%s %%s\n"
+@p -p=\n\n
+@pause
+
+@cls
+@p "-i=Show Path environment variable" "-p=%heading%"
+p -e=PATH "-p=\t%%s\n"
+@p "-p=\n\nNumbered and limited to those with Program in their name\n"
+p -e=PATH -P=Program "-p=\t%%4# %%s\n"
+@p -p=\n\n
+@pause
+
+cls
+@p "-i=Search Path environment variable for p*.exe" "-p=%heading%"
+p -e=PATH "-p=%%4# %%s\n" p*.exe
+@p -p=\n\n
+@pause
+
+
+@cls
+@p "-i=Compare Directory listing" "-p=%heading%"
+mkdir txt
+ld -Sn > txt\ld1.txt
+dir /On > txt\dir1.txt
+
+fc /w txt\ld1.txt txt\dir1.txt
+@p "-p=\n--(%ERRORLEVEL%)-- Default Directory Comparison results (mostly equal) "
+@pause
+
+@cls
+@p "-i=Compare Sorted Directory listing" "-p=%heading%"
+ld -n -Sn -1=txt\ld2.txt  
+dir /On /b > txt\dir2.txt
+
+fc /w txt\ld2.txt txt\dir2.txt
+@p "-p=\n--(%ERRORLEVEL%)-- Directory Name comparison results (100% equal) "
+@pause
+
+@cls
+@p "-i=Compare Sorted Directory listing" "-p=%heading%"
+ld -ct lm.exe
+ld -S-m -tm  > txt\ld3.log
+dir /tw /o-d /O-n  > txt\dir3.log
+fc /w txt\ld3.log txt\dir3.log
+@p "-p=\n-- Directory Name comparison results (mostly equal) "
+@pause
+
+@cls 
+@p "-i=Sorted Directory various ways" "-p=%heading%"
+@p "-p=---Sort by Extension:\n"
+ld -Se txt
+@p "-p=\n\n---Sort by reverse Extension:\n"
+ld -S-e txt
+@pause
+
+@cls
+@p "-p=\n\n---Sort by Name:\n"
+ld -Sn txt
+@p "-p=\n\n---Sort by reverseName:\n"
+ld -S-n txt
+@pause
+
+@cls
+@p "-p=\n\n---Sort by Size:\n"
+ld -Ss txt
+@p "-p=\n\n---Sort by reverse Size:\n"
+ld -S-s txt
+@pause
+
+@cls
+@p "-p=\n\n---Sort by Creation Time:\n"
+ld -Sc -tc txt
+@p "-p=\n\n---Sort by Modification Time:\n"
+ld -Sm -tm txt
+@pause
+
+@cls
+@p "-i=File Copy and Compare" "-p=%heading%"
+lc -q * dst1\*
+lc -q * dst1\sub1\*
+
+xcopy * dst2\* >nul
+xcopy * dst2\sub1\* >nul
+
+cmp dst1\sub1\* dst2\sub1\*
+@p   "-p=\n--(%ERRORLEVEL%)-- Copy and Compare results (100% equal) "
+@pause
+
+@cls
+@p "-i=File Copy l* and Compare" "-p=%heading%"
+lc l* dst1\sub2\*1
+@p "-p=\n\n---(%ERRORLEVEL%) copy l*"
+cmp -aF dst1\sub2\* dst1\sub1\*
+@p "-p=\n--(%ERRORLEVEL%)-- Copy subset and Compare results "
+@pause
+   
+@cls 
+@p "-i=Directory usage report" "-p=%heading%"
+ld -u dst1\sub1 dst2\sub1
+@p -p=\n\n
+@pause
+
+
+:TIMEOP
+@cls
+@p "-i=Set file times" "-p=%heading%"
+@mkdir timeMod
+
+@echo > timeMod\now
+@echo > timeMod\yesterday
+@echo > timeMod\prevHour
+@echo > timeMod\nextHour
+@echo > timeMod\tomorrow
+ld -ct=now timeMod\now
+ld -ct=-1d timeMod\yesterday
+ld -ct=-1h timeMod\prevhour
+ld -ct=+1h timeMod\nexthour
+ld -ct=+1d timeMod\tomorrow
+
+ld -tm timeMod\*
+@p -p=\n\n
+@pause
+
+@cls
+@p "-i=Test file times" "-p=%heading%"
+@p "-p=\n----Show Modified time of now (may miss if minute just rolled over) ----\n"
+ld -tm -T=mEnow timeMod\*
+@p "-p=\n----Show Greater than now, two files nexthour and tomorrow and maybe now----\n"
+ld -tm -T=mGnow timeMod\*
+@p "-p=\n----Show Less than now, two files prevHour, yesterday ----\n"
+ld -tm -T=mLnow timeMod\*
+@p "-p=\n----Show Less than -30 minutes, two files prevHour, yesterday ----\n"
+ld -tm -T=mL-30m timeMod\*
+@p "-p=\n----Show Less than -2 hours, one file  yesterday ----\n"
+ld -tm -T=mL-2h timeMod\*
+@p "-p=\n----Show Greater than -2 hours, four files  prevHour, nextHour, now, tomorrow ----\n"
+ld -tm -T=mG-2h timeMod\*
+@p "-p=\n----Show Greater than Jan 1st, 2013, five files ---\n"
+ld -tm -T=mG2013:01:01:00:00:00 timeMod\*
+@p "-p=\n----Show Less than Dec 31st, 2013, five files ---\n"
+ld -tm -T=mL2013:12:31:12:30:59 timeMod\*
+@p -p=\n\n
+@pause
+
+@cls
+lf -F=now,prevHour,nextHour -tm -s
+@p   "-p=\n--(%ERRORLEVEL%)-- Find files, default return dir+file count:3 "
+lf -E=s -F=now,prevHour,nextHour -s
+@p   "-p=\n--(%ERRORLEVEL%)-- Find files, return total found file sizes:39  "
+lf -E=f -F=now,prevHour,nextHour -tm
+@p   "-p=\n--(%ERRORLEVEL%)-- Find files, return total #files:3  "
+@w ld.exe
+
+@cls
+@p "-i=Execute attrib command" "-p=%heading%"
+ld -n p* | lf -I=- | le -I=- -c="attrib +R "
+ld -n p* | lf -I=- | ld -I=-
+@p -p=\n\n
+@pause
+
+
+@cls
+@p "-i=Move  command" "-p=%heading%"
+lm dst1\* new1\*
+@p -p=\n\n
+@pause
+
+@cls
+@p "-i=Move  command" "-p=%heading%"
+lm -r dst2\* new1\*
+@p -p=\n\n
+@pause
+
+@cls
+@p "-i=Move  command" "-p=%heading%"
+lm -rO dst2\* new1\* 
+@p -p=\n\n
+@pause
+
+goto END
+
+@cls
+@p "-i=Delete Duplicate files" "-p=%heading%"
+cmp -d=e dst1\* dst2\*
+@p   "-p=\n--(%ERRORLEVEL%)-- compare and delete equal "
+@pause
+
+@cls 
+@p "-i=Delete Dir (fail on subdirs)" "-p=%heading%"
+lr dst1\
+@p   "-p=\n--(%ERRORLEVEL%)-- Delete files, fail on subdirectories "
+@pause
+
+@cls
+@p "-i=Delete Dir and subdirs" "-p=%heading%"
+lr -r dst1\
+@p   "-p=\n--(%ERRORLEVEL%)-- Delete files and subdirectories "
+@pause
+
+:END
+@popd
+@prompt $p$g
+   
+</pre>
+</div>
+
+</body>
+</html>

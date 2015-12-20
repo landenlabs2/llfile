@@ -1,0 +1,15 @@
+
+
+
+LLFile Release Notes
+
+v8.3	Dec 2011
+
+*  Add -ct to ld(directory) to set time	(aka Touch command)
+*  Changed link	options	to reduce dependency on	mscp90.dll, which increased size of executable.
+
+v16.3   Jun-2015
+
+* Add Find and Replace (Grep)
+
+
