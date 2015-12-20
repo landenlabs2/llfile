@@ -2,7 +2,7 @@
 // llbase - Base class for all directory manipulation
 //
 // Author: Dennis Lang - 2015
-// http://landenlabs/
+// http://landenlabs.com/
 //
 // This file is part of LLFile project.
 //

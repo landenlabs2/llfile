@@ -2,7 +2,7 @@
 // llerrMsg - Common error messages.
 //
 // Author: Dennis Lang - 2015
-// http://landenlabs/
+// http://landenlabs.com/
 //
 // This file is part of LLFile project.
 //

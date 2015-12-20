@@ -2,7 +2,7 @@
 // lldel - Delete files provided by DirectoryScan
 //
 // Author: Dennis Lang - 2015
-// http://landenlabs/
+// http://landenlabs.com/
 //
 // This file is part of LLFile project.
 //
