@@ -1316,6 +1316,9 @@ int LLPrintf::ProcessEntry(
     {
         retStatus = sOkay;
 
+#if 1
+		m_countOut += PrintFile(m_pushArgs, m_printFmt, pDir, m_srcPath, pFileData, depth);
+#else
         const char* lastDot = strchr(pFileData->cFileName, '.');
         StringQueue inList;
         char buf[256];
@@ -1386,6 +1389,7 @@ int LLPrintf::ProcessEntry(
 
 		while (inList.size() != 0)
 			PrintFormatted(m_printFmt, inList, m_countOut);
+#endif
     }
 
     if (retStatus == sOkay)
@@ -1399,3 +1403,85 @@ int LLPrintf::ProcessEntry(
     return retStatus;
 }
 
+// ---------------------------------------------------------------------------
+size_t LLPrintf::PrintFile(
+	const char* pPushArgs,
+	const char* pFmt,
+	const char* pDir,
+	const char* srcPath,
+	const WIN32_FIND_DATA* pFileData,
+	int depth)      // 0...n is directory depth
+{
+	const char* lastDot = strchr(pFileData->cFileName, '.');
+	StringQueue inList;
+	char buf[256];
+	CaseFold caseFold = eDefCase;
+	size_t count = 0;
+
+	while (*pPushArgs != '\0')
+	{
+		//  \directory\root.ext
+		//
+		//  d = directory
+		//  n = name (root.ext)
+		//  r = root
+		//  e = extension
+		//  p = directory and name
+		//  s = size
+		//  l = lowercase
+		//  u = uppercase
+		//  c = capitalize
+		//  _ = default case
+		// Todo:
+		//  x = creation date
+		//  i = link status
+		//
+		switch (*pPushArgs)
+		{
+		case '_':
+			caseFold = eDefCase;
+			break;
+		case 'l':
+			caseFold = eLowerCase;
+			break;
+		case 'u':
+			caseFold = eUpperCase;
+			break;
+		case 'c':
+			caseFold = eCapitalize;
+			break;
+
+		case 'd':   // directory
+			inList.push(ChangeCase(pDir, caseFold));
+			break;
+		case 'n':   // name
+			inList.push(ChangeCase(pFileData->cFileName, caseFold));
+			break;
+		case 'r':   // root
+			inList.push(ChangeCase(pFileData->cFileName, caseFold));
+			if (lastDot)
+				inList.back().resize(inList.back().find_last_of('.'));
+			break;
+		case 'e':   // extension
+			if (lastDot)
+				inList.push(ChangeCase(lastDot + 1, caseFold));
+			else
+				inList.push("");
+			break;
+		default:
+		case 'p':   // full path
+			inList.push(ChangeCase(srcPath, caseFold));
+			break;
+		case 's':
+			_snprintf(buf, ARRAYSIZE(buf), "%d", pFileData->nFileSizeLow);
+			inList.push(ChangeCase(buf, caseFold));
+			break;
+		}
+		++pPushArgs;
+	}
+
+	while (inList.size() != 0)
+		PrintFormatted(pFmt, inList, count);
+
+	return count;
+}

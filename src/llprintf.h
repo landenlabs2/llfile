@@ -62,6 +62,15 @@ public:
     static LLPrintfConfig sConfig;
     LLConfig&       GetConfig();
 
+
+	static size_t PrintFile(
+		const char* pPushArgs, 
+		const char* pFmt,
+		const char* srcFile, 
+		const char* pDir, 
+		const WIN32_FIND_DATA* pFileData,
+		int dirDepth);
+
 protected:
     // Return 1 if output anything, 0 if nothing, -1 if error.
     virtual int ProcessEntry(const char* pDir, const WIN32_FIND_DATA* pFileData, int depth);

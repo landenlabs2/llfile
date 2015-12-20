@@ -111,7 +111,10 @@ protected:
     bool        m_progress;
     bool        m_showMD5hash;
 
-    CompareDataMode  m_compareDataMode;
+	lstring         m_printFmt;
+	lstring			m_pushArgs;
+
+    CompareDataMode m_compareDataMode;
 
     enum MatchMode{ eNameAndData, ePathAndData };
     MatchMode       m_matchMode;
@@ -159,6 +162,8 @@ private:
     // Return sIgnore, sOkay or sError
     int CompareFileSpecs(DirEntryList& dirEntryList);
     void ReportCompareFileSpecs() const;
+
+	std::ostream&  PrintPath(const char* msg, const LLDirEntry* dirEntry0, const LLDirEntry* dirEntry1);
 
     // Return sIgnore, sOkay or sError
     int CompareFileData(DirEntryList& dirEntryList);

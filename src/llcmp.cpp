@@ -43,8 +43,10 @@
 
 #include "llcmp.h"
 #include "llpath.h"
+#include "llprintf.h"
 #include "Security.h"
 #include "comma.h"
+
 
 // ---------------------------------------------------------------------------
 
@@ -85,10 +87,25 @@ static const char sHelp[] =
 "   -v                  ; Verbose, show detail on first difference per file \n"
 "   -V=<count>          ; Verbose, show differences, stop after 'count' per file \n"
 "   -w=<width>          ; Compare filesize numeric width, default 12\n"
-"   -O=<1|2|3>          ; Output 0=equal 1=left diff, 2=right diff, 3=both diff \n"   
-"   -P                  ; Hide compress progress \n"
 "   -q                  ; quiet, dont show detail, just set exit status 0=match, 1=differ\n"
+"   -P=[pdn...]         ; File arguments passed to printf (default: p)\n"
+"                       ;   p=full path\n"
+"                       ;   d=directory\n"
+"                       ;   n=name\n"
+"                       ;   r=name root (no extension)\n"
+"                       ;   e=extension (right of last .)\n"
+"                       ;   s=size (as a string)\n"
+"                       ;   _=defcase\n"
+"                       ;   l=lowercase\n"
+"                       ;   u=uppercase\n"
+"                       ;   c=captialize\n"
+"                       ;   x=unix slash\n"
+"                       ;   X=dos slash\n"
+"   -p=<fmt>            ; Printf format, use any valid %s format, %20s (default: %s) \n"
+"                       ; Use quotes to include spaces in format \n"
+"                       ; example  \"-p%s\\n\"  \n"
 "   -qq                 ; Hide details and only show summary when used with -F \n"
+"   -qp                 ; Hide file compare progress \n"
 "   -Q=n                ; Quit after 'n' lines output\n"
 "   -1=<output>         ; Redirect output to file \n"
 "   -,                  ; Disable commas in size and numeric output\n"
@@ -188,6 +205,8 @@ LLCmp::LLCmp() :
     m_quiet(false),         // no stats, no color
     m_progress(true),
     m_showMD5hash(false),
+	m_printFmt("%s"),
+	m_pushArgs("p"),
     m_compareDataMode(eCompareBinary),
     m_matchMode(eNameAndData),
     m_offset(0),            // start compare at file offset.
@@ -237,6 +256,8 @@ int LLCmp::Run(const char* cmdOpts, int argc, const char* pDirs[])
     const char offsetOptErrMsg[] = "Start binary compare at file offset, syntax -o=<#offset>";
     const char quitByteErrMsg[] = "Quit after 'n' differences per file, syntax -Q=<#num>";
     const char widthErrMsg[] = "missing width, syntax -w=<#width>";
+	const char argOptMsg[] = "File arguments passed to printf, -a=[pdnres_luc]...";
+	const char sMissingPrintFmtMsg[] = "Missing print format, -p=<fmt>\n";
 
     std::string str;
 
@@ -299,13 +320,32 @@ int LLCmp::Run(const char* cmdOpts, int argc, const char* pDirs[])
         case 'o':   // offset, -o=<offset>
             cmdOpts = LLSup::ParseNum(cmdOpts+1, m_offset, offsetOptErrMsg);
             break;
-        case 'P':   // show/hide Progress
-            m_progress = !m_progress;
-            break;
+    
     // Option reporting options, -a, -e, -q, -s, -v, -V, -w, -=, -,
         case 'a':    // show All matches
             m_showDiff = m_showEqual = m_showSkipLeft = m_showSkipRight = true;
             break;
+
+		case 'P':
+			// File arguments passed to printf, -a=[pdnres_luc]...
+			//   p=full path
+			//   d=directory
+			//   n=name
+			//   r=name root (no extension)
+			//   e=extension (right of last .)
+			//   s=size (as a string)
+			//   _=defcase
+			//   l=lowercase
+			//   u=uppercase
+			//   c=captialize
+			//  NOTE:  -a must proceed -i or -I
+		
+			cmdOpts = LLSup::ParseString(cmdOpts + 1, m_pushArgs, argOptMsg);
+			break;
+		case 'p':   // print using printf
+			cmdOpts = LLSup::ParseString(cmdOpts + 1, m_printFmt, sMissingPrintFmtMsg);
+			break;
+
         case 'e':    // show equal matches only
             m_showEqual = true;
             m_showDiff = false;
@@ -315,11 +355,21 @@ int LLCmp::Run(const char* cmdOpts, int argc, const char* pDirs[])
             m_showMD5hash = true;
             break;
         case 'q':
-            m_quiet = !m_quiet;
-            m_showEqual = m_showDiff = false;
-            m_showSkipLeft = m_showSkipRight = false;
-            m_progress = false;
+			if (cmdOpts[1] == 'p')
+			{
+				m_progress = !m_progress;
+				cmdOpts++;
+			} 
+			else
+			{
+				m_quiet = !m_quiet;
+				m_showEqual = m_showDiff = false;
+				m_showSkipLeft = m_showSkipRight = false;
+				m_progress = false;
+			}
             break;
+			
+
         case 's':    // show skip only, or -s=r or -s=l
             m_showEqual = false;
             m_showDiff = false;
@@ -752,6 +802,33 @@ void LLCmp::DeleteCmpFile(const char* fileToDel)
 }
 
 // ---------------------------------------------------------------------------
+std::ostream& LLCmp::PrintPath(const char* msg, const LLDirEntry* dirEntry0, const LLDirEntry* dirEntry1)
+{
+	int depth = 0;
+	WIN32_FIND_DATA fileData;
+	char filePath[MAX_PATH];
+
+	LLMsg::Out() << msg;
+
+	sprintf_s(filePath, ARRAYSIZE(filePath), "%s\\%s",
+		dirEntry0->szDir,
+		dirEntry0->filenameLStr);
+	m_dirSort.m_fillFindData(fileData, *dirEntry0, m_dirSort);
+	strncpy(fileData.cFileName, dirEntry0->filenameLStr, MAX_PATH);
+	LLPrintf::PrintFile(m_pushArgs, m_printFmt, dirEntry0->szDir, filePath, &fileData, depth);
+
+	LLMsg::Out() << ", ";
+	sprintf_s(filePath, ARRAYSIZE(filePath), "%s\\%s",
+		dirEntry1->szDir,
+		dirEntry1->filenameLStr);
+	m_dirSort.m_fillFindData(fileData, *dirEntry1, m_dirSort);
+	strncpy(fileData.cFileName, dirEntry1->filenameLStr, MAX_PATH);
+	LLPrintf::PrintFile(m_pushArgs, m_printFmt, dirEntry1->szDir, filePath, &fileData, depth);
+
+	return LLMsg::Out();
+}
+
+// ---------------------------------------------------------------------------
 int LLCmp::CompareFileData(DirEntryList& dirEntryList)
 {
     int resultStatus = sIgnore;
@@ -802,27 +879,32 @@ int LLCmp::CompareFileData(DirEntryList& dirEntryList)
 
         unsigned cmpResult = 
                 (this->*compareFileMethod)(filePath1, filePath2, compareInfo, quitAfter, cmpResults);
+
+
         switch (cmpResult)
         {
         case eCmpSkip:    // Skipped
             m_skipCount[isLeft ? 0 : 1]++;
             if (okayToSkip)
             {
-                LLMsg::Out() << "Skip, " << filePath1 << ", " << filePath2 << std::endl;
+                // LLMsg::Out() << "Skip, " << filePath1 << ", " << filePath2 << std::endl;
+				PrintPath("Skip, ", dirEntryList[0], dirEntryList[fileIdx]) << std::endl;
                 LLMsg::Out() << cmpResults.str();
                 resultStatus = sOkay;
             }
             break;
         case eCmpErr:    // access error
             m_errorCount++;
-            LLMsg::Out() << "Err, " << filePath1 << ", " << filePath2 << std::endl;
+            // LLMsg::Out() << "Err, " << filePath1 << ", " << filePath2 << std::endl;
+			PrintPath("Err, ", dirEntryList[0], dirEntryList[fileIdx]) << std::endl;
             resultStatus = sError;
             break;
         case eCmpEqual:
             m_equalCount++;
             if (m_showEqual)
             {
-                LLMsg::Out() << "==, " << filePath1 << ", " << filePath2 << std::endl;
+                // LLMsg::Out() << "==, " << filePath1 << ", " << filePath2 << std::endl;
+				PrintPath("==, ", dirEntryList[0], dirEntryList[fileIdx]) << std::endl;
                 LLMsg::Out() << cmpResults.str();
                 resultStatus = sOkay;
             }
@@ -861,14 +943,16 @@ int LLCmp::CompareFileData(DirEntryList& dirEntryList)
                 resultStatus = sOkay;
                 if (m_compareDataMode == eCompareText)
                 {
-                    LLMsg::Out() << "!=, " << filePath1 << ", " << filePath2
+					LLMsg::Out() << "!=, " << filePath1 << ", " << filePath2;
+					PrintPath("!=, ", dirEntryList[0], dirEntryList[fileIdx])
                         << ", DiffLineCnt: " << compareInfo.diffCnt
                         << ", FirstDiffLine:" << compareInfo.differAt 
                         << std::endl;
                 }
                 else
                 {
-                    LLMsg::Out() << "!=, " << filePath1 << ", " << filePath2
+                    // LLMsg::Out() << "!=, " << filePath1 << ", " << filePath2
+					PrintPath("!=, ", dirEntryList[0], dirEntryList[fileIdx])
                         << ", Differ At: " << compareInfo.differAt
                         << " (" << compareInfo.differAt*100/compareInfo.fileSize1
                         << "%)";
