@@ -232,19 +232,32 @@ int LLExec::Run(const char* cmdOpts, int argc, const char* pDirs[])
               << " Separators:[" << m_separators << "]\n"
               << "\n";
 
-    if (m_inFile.length() != 0)
-    {
-        LLSup::ReadFileList(m_inFile.c_str(), EntryCb, this);
-    }
+	if (m_appendCount == 0)
+	{
+		char currentDir[MAX_PATH];
+		GetCurrentDirectory(ARRAYSIZE(currentDir), currentDir);
+		WIN32_FIND_DATA data;
+		strcpy(data.cAlternateFileName, "none");
+		data.dwFileAttributes = FILE_ATTRIBUTE_NORMAL;
 
-    // Iterate over dir patterns.
-    for (int argn=0; argn < argc; argn++)
-    {
-        VerboseMsg() << argn << ": Dir:" << pDirs[argn] << "\n";
-        m_pPattern = pDirs[argn];
-        m_dirScan.Init(pDirs[argn], NULL);
-        nFiles += m_dirScan.GetFilesInDirectory();
-    }
+		ProcessEntry(currentDir, &data, 1);
+	}
+	else
+	{
+		if (m_inFile.length() != 0)
+		{
+			LLSup::ReadFileList(m_inFile.c_str(), EntryCb, this);
+		}
+
+		// Iterate over dir patterns.
+		for (int argn = 0; argn < argc; argn++)
+		{
+			VerboseMsg() << argn << ": Dir:" << pDirs[argn] << "\n";
+			m_pPattern = pDirs[argn];
+			m_dirScan.Init(pDirs[argn], NULL);
+			nFiles += m_dirScan.GetFilesInDirectory();
+		}
+	}
 
     if (m_echo)
     {
@@ -295,6 +308,8 @@ int LLExec::ProcessEntry(
 
     if ( !FilterDir(pDir, pFileData, depth))
         return sIgnore;
+	if (!FilterGrep())
+		return sIgnore;
 
     VerboseMsg() << m_srcPath << "\n";
 
@@ -311,7 +326,7 @@ int LLExec::ProcessEntry(
     }
 
     // TODO - deal with this and using base class MakeDstPath()
-    if (!srcAdded)
+    if (!srcAdded && m_appendCount > 0)
     {
         command += m_quote ? " \"" : " ";
         command += m_srcPath;
@@ -319,9 +334,6 @@ int LLExec::ProcessEntry(
         if (m_quote)
             command += "\"";
     }
-
-    if ( !FilterGrep())
-        return sIgnore;
 
     if (m_appendCount > 1)
     {

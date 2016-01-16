@@ -116,7 +116,8 @@ static const char sHelp[] =
 "   -F                  ; Match just the filename, size and date and not its contents\n"
 "   -I=<infile>         ; Read filenames from infile or stdin if -\n"
 "   -r                  ; Recurse directories\n"
-"   -l=<levels>         ; Directory levels to include in path matching, default is 1\n"
+"   -l=<levels>         ; Directory levels to include in path matching, default is 30\n"
+"                       ;  Set to small number if files unique and dir trees different \n"
 "   -o=<offset>         ; Start binary file compare at file offset, default is 0 \n"
 "   -X=<pathPat>,...    ; Exclude patterns  -X=*.lib,*.obj,*.exe\n"
 "                       ;  No space in patterns. Pattern applied against fullpath\n"
@@ -211,7 +212,7 @@ LLCmp::LLCmp() :
     m_matchMode(eNameAndData),
     m_offset(0),            // start compare at file offset.
     m_quitByteLimit(10),    // number of different bytes to dump in verbose mode.
-    m_levels(1),            // number of directory levels to include in path match.
+    m_levels(30),           // number of directory levels to include in sort compare path
     m_width(12),            // Filespec numeric width
     m_colSeparator("\t"),   // separator used between filespecs
     m_equalCount(0),
@@ -1295,12 +1296,16 @@ bool CompareDirLevels::Compare(LLDirEntry* pDirEnt1, LLDirEntry* pDirEnt2)
     // matching in uneaven directories.
     // Also add s_dir list to this sorting object to peel off the root directories.
 
-    const char* pDir1 = GetDir(pDirEnt1);
-    const char* pDir2 = GetDir(pDirEnt2);
-    int nameCmp =  _stricmp(pDirEnt1->filenameLStr, pDirEnt2->filenameLStr);
 
-    int dirCmp = (nameCmp != 0) ? nameCmp : _stricmp(pDir1, pDir2);
-    int fullCmp =  (dirCmp != 0) ? dirCmp : _stricmp(pDirEnt1->szDir, pDirEnt2->szDir);
+    int nameCmp =  _stricmp(pDirEnt1->filenameLStr, pDirEnt2->filenameLStr);
+	
+	if (nameCmp == 0)
+	{
+		const char* pDir1 = GetDir(pDirEnt1);
+		const char* pDir2 = GetDir(pDirEnt2);
+		nameCmp = _stricmp(pDir1, pDir2);
+	}
+    int fullCmp =  (nameCmp != 0) ? nameCmp : _stricmp(pDirEnt1->szDir, pDirEnt2->szDir);
     return fullCmp < 0;
 }
 

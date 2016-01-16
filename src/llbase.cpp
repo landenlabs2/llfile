@@ -469,9 +469,11 @@ bool LLBase::GrepOpt::Parse(const std::string& str)
             break;
         case 'B':
             beforeCnt = strtol(strPtr, &strPtr, 10);
+			force = 'l';
             break;
         case 'A':
             afterCnt = strtol(strPtr, &strPtr, 10);
+			force = 'l';
             break;
         default:
             return false;
