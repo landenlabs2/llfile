@@ -1,0 +1,13 @@
+
+
+ Directory:E:\opt\soft14\c-c++\dlang14c++\All\llfile-v15.9s\test
+Modification                     Size  A  File
+10/19/2015 08:52 AM                 0  \  dst
+10/19/2015 08:52 AM                 0  \  val1
+10/19/2015 08:53 AM                 0  \  val2
+06/25/2015 09:31 PM             1,553     x1
+06/26/2015 08:36 AM               344     x2
+06/25/2015 09:31 PM             1,553     x3
+07/16/2015 10:47 PM                 0  \  y
+
+;Directories:4 Files:3 TotalSize:3,450 
