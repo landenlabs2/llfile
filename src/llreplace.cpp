@@ -453,7 +453,8 @@ int LLReplace::Run(const char* cmdOpts, int argc, const char* pDirs[])
 
                 try {
                     findCnt++;
-                    grepRep.m_grepLinePat = grepRep.m_grepLineStr = str;   
+                    grepRep.m_grepLineStr = str;   
+					grepRep.m_grepLinePat = std::tr1::regex(str /* , regex_constants::ECMAScript */);
                     m_grepReplaceList.push_back(grepRep);
                     // If pattern has explict test for beginning or end of line
                     // process search/replace byLine rather then byEntireFile.
@@ -870,7 +871,6 @@ unsigned LLReplace::FindGrep()
     
     if (!m_grepReplaceList.empty())
     {
-        std::regex_constants::match_flag_type flags = std::regex_constants::match_default;
         size_t lineCnt = 0;
 
         try
@@ -883,6 +883,10 @@ unsigned LLReplace::FindGrep()
             }
             else
             {        
+				std::regex_constants::match_flag_type flags =
+					std::regex_constants::match_flag_type(std::regex_constants::match_default
+						+ std::regex_constants::match_not_eol + std::regex_constants::match_not_bol);
+
                 MemMapFile mapFile;
                 void* mapPtr;
                 SIZE_T viewLength = INT_MAX;
