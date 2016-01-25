@@ -235,6 +235,8 @@ static const char sHelp[] =
 "    which does not appear in the normal text, like [^?]* \n"
 "    Example to remove XML tag group. \n"
 "     \"-G= *<SurveySettings\\>[^?]*\\</SurveySettings>\" \"-R=\" file.xml \n"
+"\n"
+"    lg \"-G=( *)if \\(AppConfigInfo\\.DEBUG\\) \\{[\\r\\n]\\s*Log[.]([^;]+);\\s*[\\r\\n]\\s*\\}\" \"-R=$1WLog.$2\" \n"
 "\n";
 
 LLReplaceConfig LLReplace::sConfig;
