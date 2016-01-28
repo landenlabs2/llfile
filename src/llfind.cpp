@@ -33,6 +33,7 @@
 #include <assert.h>
 
 #include "LLFind.h"
+#include "comma.h"
 
 
 // ---------------------------------------------------------------------------
@@ -141,6 +142,7 @@ int LLFind::Run(const char* cmdOpts, int argc, const char* pDirs[])
     size_t nFiles = 0;
     bool sortNeedAllData = m_showSize;
 	bool whereMode = false;	// where mode add [.](exe|com|cmd|bat) to search pattern.
+    EnableCommaCout();
 
     // Setup default as needed.
     if (argc == 0 && strstr(cmdOpts, "I=") == 0)
@@ -213,6 +215,10 @@ int LLFind::Run(const char* cmdOpts, int argc, const char* pDirs[])
                 }
                 // m_dirSort.SetSortData(sortNeedAllData);
             }
+            break;
+
+        case ',':
+            DisableCommaCout();
             break;
 
         case '?':
