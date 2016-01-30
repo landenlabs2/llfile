@@ -292,7 +292,7 @@ static DWORD WINAPI CopyProgressCb(
     DWORD written;
     char  msg[40];
     DWORD msgLen = 0;
-    const LONGLONG MB = 1LL << 20;
+    // const LONGLONG MB = 1LL << 20;
     double ticks = (GetTickCount() - pLLCopy->m_startTick) / 1000.0;
 
     double bytesPerSec = (ticks==0) ? 0.0 : ((pLLCopy->m_totalBytes + totalCopied.QuadPart) / MB) / ticks;

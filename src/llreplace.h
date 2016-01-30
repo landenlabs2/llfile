@@ -134,4 +134,7 @@ protected:
     int ZipListArchive(const char* zipArchiveName);
     int ZipReadFile(const char* zipFilename,
         const char* fileToExtract, const char* password);
+
+	void ResetGrepColor();
+	void SetGrepColor(WORD color);
 };

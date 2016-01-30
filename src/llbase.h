@@ -256,7 +256,7 @@ public:
             lineCnt(INT_MAX), matchCnt(INT_MAX), 
             beforeCnt(0), afterCnt(0)
         { 
-            hideFilename = hideLineNum = hideMatchCnt = hideText = false;
+            hideColor = hideFilename = hideLineNum = hideMatchCnt = hideText = false;
             ignoreCase = false;
 			repeatReplace = false;
             force = update = 0;
@@ -267,6 +267,7 @@ public:
         unsigned beforeCnt;
         unsigned afterCnt;
 
+		bool     hideColor;
         bool     hideFilename;
         bool     hideLineNum;
         bool     hideMatchCnt;

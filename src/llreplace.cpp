@@ -168,7 +168,7 @@ static const char sHelp[] =
 "                       ; Default is search entire file \n"
 "                       ;     Ln=first n lines \n"
 "                       ;     Mn=first n matches \n"
-"                       ;     H(f|l|m|t) Hide filename|Line#|MatchCnt|Text \n"
+"                       ;     H(c|f|l|m|t) Hide color|filename|Line#|MatchCnt|Text \n"
 "                       ;     I=ignore case \n"
 "                       ;     R=repeat replace \n"
 "                       ;     Bn=show before n lines \n"
@@ -186,8 +186,10 @@ static const char sHelp[] =
 "   -Q=n                ; Quit after 'n' file matches\n"
 "   -r                  ; Recurse into subdirectories\n"
 "   -R=<replacePattern> ; Use with -G to replace match\n"
+#if 0
 "   -Rbefore=<pattern>  ; TODO Use with -R to move a replacement\n"
 "   -Rafter=<pattern>   ; TODO Use with -R to move a replacement\n"
+#endif
 "   -s                  ; Show file size size\n"
 "   -t[acm]             ; Show Time a=access, c=creation, m=modified, n=none\n"
 "   -X=<pathPat>,...    ; Exclude patterns  -X=*.lib,*.obj,*.exe\n"
@@ -395,6 +397,17 @@ int LLReplace::Run(const char* cmdOpts, int argc, const char* pDirs[])
     // Initialize stuff
     size_t nFiles = 0;
     bool sortNeedAllData = m_showSize;
+
+#if 0
+	// Try and detect redirection and auto disable File, Match and Line numbers.
+	bool isOutConsole = _isatty(_fileno(stdout));
+	HANDLE stdoutHnd = GetStdHandle(STD_OUTPUT_HANDLE);
+	DWORD outType = GetFileType(stdoutHnd); // FILE_TYPE_PIPE
+	if (outType == FILE_TYPE_PIPE)
+		isOutConsole = false;
+	if (outType == FILE_TYPE_DISK)
+		isOutConsole = false;
+#endif
 
 #if 0
     // Setup default as needed.
@@ -724,11 +737,11 @@ int LLReplace::Run(const char* cmdOpts, int argc, const char* pDirs[])
     if (m_verbose)
     {
         // InfoMsg() << ";Matches:" << m_matchCnt << ", Files:" << m_countOutFiles << std::endl;
-        SetColor(MATCH_COLOR);
+        SetGrepColor(MATCH_COLOR);
         LLMsg::Out() << ";Matches:" << m_matchCnt << ", MatchFiles:" << m_countOutFiles 
             << ", ScanFiles:" << m_countInFiles 
             << std::endl;
-        SetColor(sConfig.m_colorNormal);
+		ResetGrepColor();
     }
 
     // Return status, c=file count, d=depth, s=size, a=age
@@ -851,7 +864,7 @@ void LLReplace::OutFileLine(size_t lineNum, unsigned matchCnt, size_t filePos)
 {
     if (m_echo) 
     {
-        SetColor(FILE_COLOR);
+		SetGrepColor(FILE_COLOR);
         if (!m_grepOpt.hideFilename)
             LLMsg::Out() << m_srcPath << ":";
         if (lineNum != 0 && !m_grepOpt.hideLineNum)
@@ -860,7 +873,7 @@ void LLReplace::OutFileLine(size_t lineNum, unsigned matchCnt, size_t filePos)
             LLMsg::Out() << matchCnt << "M:";
         if (filePos != 0 && !m_grepOpt.hideLineNum)
             LLMsg::Out() << filePos << "P:";
-        SetColor(sConfig.m_colorNormal);
+		ResetGrepColor();
         if (m_grepOpt.hideText && !(m_grepOpt.hideFilename && m_grepOpt.hideLineNum && m_grepOpt.hideMatchCnt))
             LLMsg::Out() << std::endl;
     }
@@ -880,7 +893,8 @@ unsigned LLReplace::FindGrep()
             if (m_byLine || m_grepReplaceList.size() > 1) 
             {
                 EnableFiltersForFile(m_srcPath);
-                std::ifstream in(m_srcPath, std::ios::in, _SH_DENYNO);
+				int inMode = std::ios::in | std::ios::binary;
+                std::ifstream in(m_srcPath, inMode, _SH_DENYNO);
                 matchCnt += FindGrep(in);    
             }
             else
@@ -920,9 +934,9 @@ unsigned LLReplace::FindGrep()
                                     std::string prefix = std::string(begLine, match.prefix().second);
                                     // std::string suffix = std::string(match.suffix().first, endLine);;
                                     LLMsg::Out() << prefix;
-                                    SetColor(MATCH_COLOR);
+                                    SetGrepColor(MATCH_COLOR);
                                     LLMsg::Out() << match.str();
-                                    SetColor(sConfig.m_colorNormal);
+                                    ResetGrepColor();
                                     begLine = strPtr = match.suffix().first; 
                                 } while (std::tr1::regex_search(strPtr, endLine, match, grepLinePat, flags));
                                 std::string suffix = std::string(match.suffix().first, endLine);
@@ -1135,9 +1149,9 @@ unsigned LLReplace::FindGrep(std::istream& in)
                         {
                             LLMsg::Out().write(cstr + pos, iter->first - pos);
                             pos = iter->first;
-                            SetColor(iter->second.color);
+							SetGrepColor(iter->second.color);
                             LLMsg::Out().write(cstr + iter->first, iter->second.len);
-                            SetColor(sConfig.m_colorNormal);
+							ResetGrepColor();
                             pos = iter->first + iter->second.len;
                         }
                         iter++;
@@ -1211,9 +1225,9 @@ void LLReplace::ColorizeReplace(const std::string& str)
             {
                 LLMsg::Out().write(cstr + pos, iter->first - pos);
                 pos = iter->first;
-                SetColor(iter->second.color);
+				SetGrepColor(iter->second.color);
                 LLMsg::Out().write(cstr + iter->first, iter->second.len);
-                SetColor(sConfig.m_colorNormal);
+				ResetGrepColor();
                 pos = iter->first + iter->second.len;
             }
             iter++;
@@ -1415,7 +1429,8 @@ void LLReplace::RemoveTmpFile()
 }
 
 // ---------------------------------------------------------------------------
-std::ofstream& LLReplace::OpenOutput(std::ofstream& out, std::ifstream& in, std::streampos& inPos)
+std::ofstream& LLReplace::OpenOutput(
+	std::ofstream& out, std::ifstream& in, std::streampos& inPos)
 {
     int outMode = std::ios::out | std::ios::binary;
 
@@ -1453,4 +1468,18 @@ std::ofstream& LLReplace::OpenOutput(std::ofstream& out, std::ifstream& in, std:
     }
 
     return out;
+}
+
+// ---------------------------------------------------------------------------
+void LLReplace::ResetGrepColor()
+{
+	if (!m_grepOpt.hideColor)
+		SetColor(sConfig.m_colorNormal);
+}
+
+// ---------------------------------------------------------------------------
+void LLReplace::SetGrepColor(WORD color)
+{
+	if (!m_grepOpt.hideColor)
+		SetColor(color);
 }

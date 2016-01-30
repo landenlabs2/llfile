@@ -406,10 +406,10 @@ void LLBase::SetColor(WORD color)
 // ---------------------------------------------------------------------------
 bool LLBase::GrepOpt::Parse(const std::string& str) 
 {
-    // ex -G=L10_M10_Hf_B1_A2
+    // ex -g=L10_M10_Hf_B1_A2
     //  Ln=first n lines  
     //  Mn=first n matches "
-    //  H(f|l|m|t) Hide filename|Line#|MatchCnt|Text 
+    //  H(c|f|l|m|t) Hide color|filename|Line#|MatchCnt|Text 
     //  I=ignore case
     //  Bn=show before n lines 
     //  An=show after n lines 
@@ -444,11 +444,14 @@ bool LLBase::GrepOpt::Parse(const std::string& str)
 		case 'R':
 			repeatReplace = true;
 			break;
-        case 'H':
+        case 'H':	// hide
             while (islower(*strPtr))
             {
                 switch (*strPtr++)
                 {
+				case 'c':
+					hideColor = true;
+					break;
                 case 'f':
                     hideFilename = true;
                     break;
