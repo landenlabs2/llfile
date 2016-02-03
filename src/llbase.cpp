@@ -76,7 +76,7 @@ bool LLBase::ParseBaseCmds(const char*& cmdOpts)
         cmdOpts = LLSup::ParseNum(cmdOpts+1, m_depthLimit, missingDepthMsg);
         break;
     case 'D':   // Limit to directories, -D or -D=<dirPat>[,<dirPat>]...
-		cmdOpts = LLSup::ParseList(cmdOpts + 1, m_includeList, NULL);
+		cmdOpts = LLSup::ParseList(cmdOpts + 1, m_includeDirList, NULL);
         m_onlyAttr = FILE_ATTRIBUTE_DIRECTORY;
         m_dirSort.SetSortAttr(m_onlyAttr);
         break;
@@ -84,7 +84,7 @@ bool LLBase::ParseBaseCmds(const char*& cmdOpts)
          cmdOpts = LLSup::ParseString(cmdOpts+1, m_exitOpts, missingExitMsg);
         break;
     case 'F':   // Limit to files, -F or -F=<filePat>[,<filePat>]...
-        cmdOpts = LLSup::ParseList(cmdOpts+1, m_includeList, NULL);
+        cmdOpts = LLSup::ParseList(cmdOpts+1, m_includeFileList, NULL);
         m_onlyAttr = FILE_ATTRIBUTE_NORMAL | FILE_ATTRIBUTE_ARCHIVE; // show only files (see -A or -d)
         m_dirSort.SetSortAttr(m_onlyAttr);
         break;
@@ -200,17 +200,15 @@ bool LLBase::FilterDir(
     if (m_isDir)
     {
         m_countInDir++;
-		/*
-		if (m_onlyAttr == FILE_ATTRIBUTE_DIRECTORY &&
-			!LLSup::PatternListMatches(m_includeList, pFileData->cFileName, true))
+		
+		if (!LLSup::PatternListMatches(m_includeDirList, pFileData->cFileName, true))
 			return false;
-		*/
     }
     else
     {
         m_countInFile++;
 
-        if ( !LLSup::PatternListMatches(m_includeList, pFileData->cFileName, true))
+        if ( !LLSup::PatternListMatches(m_includeFileList, pFileData->cFileName, true))
             return false;
         if (m_grepSrcPathPat.flags() != 0 &&
             !std::tr1::regex_search(m_srcPath.begin(), m_srcPath.end(), m_grepSrcPathPat))

@@ -309,7 +309,7 @@ int LLCmp::Run(const char* cmdOpts, int argc, const char* pDirs[])
             break;
         case 'F':   // compare just filename, date and size and not its contents.
                     // -F=<filePat>[,<filePat>]...
-            cmdOpts = LLSup::ParseList(cmdOpts+1, m_includeList, NULL);
+            cmdOpts = LLSup::ParseList(cmdOpts+1, m_includeFileList, NULL);
             m_compareDataMode = eCompareSpecs;
             break;
         case 't':
@@ -448,7 +448,7 @@ int LLCmp::Run(const char* cmdOpts, int argc, const char* pDirs[])
         {
 			sprintf_s(filePath, ARRAYSIZE(filePath), "%s\\%s", pDirEntry->szDir, pDirEntry->filenameLStr);
             if ( !LLSup::PatternListMatches(m_excludeList, filePath) &&
-				LLSup::PatternListMatches(m_includeList, pDirEntry->filenameLStr, true) &&
+				LLSup::PatternListMatches(m_includeFileList, pDirEntry->filenameLStr, true) &&
                 LLSup::CompareRhsBits(pDirEntry->dwFileAttributes, m_onlyRhs))
             {
                 LLMsg::Out() << DisplayMD4Hash(filePath) << " " << filePath << std::endl;
@@ -1371,7 +1371,7 @@ void  LLCmp::DoCmp(CmpMatch cmpMatch)
 			sprintf_s(filePath, ARRAYSIZE(filePath), "%s\\%s", pDirEntry->szDir, pDirEntry->filenameLStr);
 
             if ( !LLSup::PatternListMatches(m_excludeList, filePath) &&
-                LLSup::PatternListMatches(m_includeList, pDirEntry->filenameLStr, true) &&
+                LLSup::PatternListMatches(m_includeFileList, pDirEntry->filenameLStr, true) &&
                 LLSup::CompareRhsBits(pDirEntry->dwFileAttributes, m_onlyRhs))
             {
                 cmpList.push_back(pDirEntry);
@@ -1431,7 +1431,7 @@ void  LLCmp::DoCmp(CmpMatch cmpMatch)
             {
 				sprintf_s(filePath, ARRAYSIZE(filePath), "%s\\%s", pDirEntry->szDir, pDirEntry->filenameLStr);
                 if ( !LLSup::PatternListMatches(m_excludeList, filePath) &&
-					LLSup::PatternListMatches(m_includeList, pDirEntry->filenameLStr, true) &&
+					LLSup::PatternListMatches(m_includeFileList, pDirEntry->filenameLStr, true) &&
                     LLSup::CompareRhsBits(pDirEntry->dwFileAttributes, m_onlyRhs))
                 {
                     cmpList.push_back(pDirEntry);

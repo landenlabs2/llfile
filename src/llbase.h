@@ -202,7 +202,8 @@ public:
     LLSup::SizeOp       m_onlySizeOp;       //    op=(Greater|Less|Equal) value=num<units G|M|K>, ex -Zg100M
 
     LLSup::StringList   m_excludeList;      // -X<pathPat>[,<pathPat>
-    LLSup::StringList   m_includeList;      // -F[<filePat>][,<filePat>]
+    LLSup::StringList   m_includeFileList;      // -F[<filePat>][,<filePat>]
+	LLSup::StringList   m_includeDirList;      // -D[<dirPat>][,<dirPat>]
 
     // Example  -TmcEnow        Select if modify or create time Equal to now\n"
     //          -TmG-4.5        Select if modify time Greater than 4.5 hours ago\n"

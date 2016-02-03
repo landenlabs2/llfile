@@ -880,6 +880,49 @@ void LLReplace::OutFileLine(size_t lineNum, unsigned matchCnt, size_t filePos)
 }
 
 // ---------------------------------------------------------------------------
+// Determine if input stream is binary.
+class BinaryState
+{
+public:
+	size_t binaryCnt = 0;
+	size_t printCnt = 0;
+	const size_t minCnt = 1024;
+
+	bool isBinary(const std::string& str)
+	{
+		for (unsigned idx = 0; idx != str.length(); idx++)
+		{
+			char c = str[idx];
+			if (isprint(c) || c == '\r' || c == '\n' || c == '\t')
+				printCnt++;
+			else
+				binaryCnt++;
+
+			if (binaryCnt + printCnt > minCnt)
+				break;
+		}
+		return binaryCnt > printCnt;
+	}
+
+	bool isBinary(const char* strBeg, const char* strEnd)
+	{
+		while (strBeg != strEnd)
+		{
+			char c = *strBeg++;
+			if (isprint(c) || c == '\r' || c == '\n' || c == '\t')
+				printCnt++;
+			else
+				binaryCnt++;
+
+			if (binaryCnt + printCnt > minCnt)
+				break;
+		}
+		return binaryCnt > printCnt;
+	}
+};
+
+
+// ---------------------------------------------------------------------------
 unsigned LLReplace::FindGrep()
 {
     unsigned matchCnt = 0;
@@ -903,6 +946,7 @@ unsigned LLReplace::FindGrep()
 					std::regex_constants::match_flag_type(std::regex_constants::match_default
 						+ std::regex_constants::match_not_eol + std::regex_constants::match_not_bol);
 
+				BinaryState binaryState;
                 MemMapFile mapFile;
                 void* mapPtr;
                 SIZE_T viewLength = INT_MAX;
@@ -913,6 +957,13 @@ unsigned LLReplace::FindGrep()
                     const char* endPtr = begPtr + viewLength;
                     const char* strPtr = begPtr;
                     std::tr1::regex grepLinePat = m_grepReplaceList[0].m_grepLinePat;
+
+					if (binaryState.isBinary(strPtr, min(strPtr+256, endPtr)))
+					{
+						if (m_verbose)
+							LLMsg::Out() << "Ignore Binary\n";
+						return matchCnt;
+					}
             
                     while (std::tr1::regex_search(strPtr, endPtr, match, grepLinePat, flags))
                     {
@@ -977,33 +1028,6 @@ struct ColorInfo
     { }
 };
 typedef  std::map<uint, ColorInfo> ColorMap;
-
- 
-// ---------------------------------------------------------------------------
-// Determine if input stream is binary.
-class BinaryState
-{
-public:
-    size_t binaryCnt = 0;
-    size_t printCnt = 0;
-    const size_t minCnt = 1024;
-
-    bool isBinary(const std::string& str)
-    {
-        for (unsigned idx = 0; idx != str.length(); idx++)
-        {
-            char c = str[idx];
-            if (isprint(c) || c == '\r' || c == '\n' || c == '\t')
-                printCnt++;
-            else
-                binaryCnt++;
-
-            if (binaryCnt + printCnt > minCnt)
-                break;
-        }
-        return binaryCnt > printCnt;
-    }
-};
 
 // ---------------------------------------------------------------------------
 unsigned LLReplace::FindGrep(std::istream& in)

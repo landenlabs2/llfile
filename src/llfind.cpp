@@ -49,6 +49,7 @@ static const char sHelp[] =
 "   -?                  ; Show this help\n"
 "   -A=[nrhs]           ; Limit files by attribute (n=normal r=readonly, h=hidden, s=system)\n"
 "   -D                  ; Only directories in matching, default is all types\n"
+"   -D=<dirPattern>     ; Only directories matching dirPttern \n"
 "   -p                  ; Search PATH environment directories for pattern\n"
 "   -e=<envName>[,...]  ; Search env environment directories for pattern\n"
 "   -F                  ; Only files in matching, default is all types\n"
@@ -373,8 +374,8 @@ int LLFind::ProcessEntry(
             return sIgnore;
 
 		if (m_onlyAttr == FILE_ATTRIBUTE_DIRECTORY &&
-			!LLSup::PatternListMatches(m_includeList, pFileData->cFileName, true))
-			return false;
+			!LLSup::PatternListMatches(m_includeDirList, pFileData->cFileName, true))
+			return sIgnore;
     }
 
 
