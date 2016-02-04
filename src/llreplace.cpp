@@ -1341,8 +1341,11 @@ unsigned LLReplace::FindReplace(const WIN32_FIND_DATA* pFileData)
                 }
 
                 in.close();
-                out.close();
-                BackupAndRenameFile();
+				if (out)
+				{
+					out.close();
+					BackupAndRenameFile();
+				}
             }
             else
             {       
@@ -1391,9 +1394,12 @@ unsigned LLReplace::FindReplace(const WIN32_FIND_DATA* pFileData)
 								grepLinePat, replaceStr, flags);
 
 							mapFile.Close();
-							out.close();
-							if (!BackupAndRenameFile())
-								break;
+							if (out)
+							{
+								out.close();
+								if (!BackupAndRenameFile())
+									break;
+							}
 						}
 					}
 					else

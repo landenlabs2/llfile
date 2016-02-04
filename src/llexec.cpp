@@ -412,7 +412,11 @@ int LLExec::ProcessEntry(
 						looping = false;
 					}
 					if (m_echo && showExit)
+					{
+						SetColor(sConfig.m_defBgColor + sConfig.FOREGROUND_YELLOW);
 						LLMsg::Out() << " ExitStatus " << exitStatus << std::endl;
+						SetColor(sConfig.m_defBgColor + sConfig.m_defFgColor);
+					}
 				}
 				else
 				{
